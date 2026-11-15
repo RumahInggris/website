@@ -18,6 +18,8 @@ Buka `index.html` di browser. Tidak perlu instalasi.
 - `js/content.js` : isi 6 pelajaran
 - `js/app.js` : logika (halaman, latihan, suara, kemajuan)
 - `images/` : gambar
+- `audio/` : folder rekaman penutur asli (opsional; kalau kosong, memakai suara browser)
+- `js/audio-manifest.js` : daftar rekaman, dibuat otomatis dari folder `audio/`
 
 ## Catatan keamanan
 

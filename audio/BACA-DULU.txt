@@ -1,0 +1,33 @@
+FOLDER REKAMAN PENUTUR ASLI
+===========================
+
+Website otomatis memakai rekaman di folder ini. Kalau suatu rekaman belum ada,
+website memakai suara komputer sebagai cadangan, jadi rekaman boleh dicicil.
+
+STRUKTUR FOLDER
+  audio/
+    speakers.json         <- daftar penutur (nama, aksen, pria/wanita)
+    us-wanita-1/          <- satu folder untuk satu penutur
+      hello.mp3
+      how-are-you.mp3
+      spell-fly.mp3
+      letter-a.mp3
+    gb-pria-1/
+      ...
+
+NAMA FILE
+  Nama file harus sama persis dengan kolom "nama_file" di naskah-rekaman.csv.
+  Contoh: kalimat "How are you?" -> how-are-you.mp3
+          ejaan kata fly          -> spell-fly.mp3
+          nama huruf A            -> letter-a.mp3
+
+speakers.json (contoh)
+  [
+    { "id": "us-wanita-1", "name": "Emily", "accent": "us", "gender": "f" },
+    { "id": "gb-pria-1",   "name": "James", "accent": "gb", "gender": "m" }
+  ]
+  accent: "us" (Amerika) atau "gb" (British).  gender: "f" (wanita) atau "m" (pria).
+
+Format file yang didukung: mp3 (disarankan), m4a, wav, ogg.
+Setelah file ditambah, daftar rekaman (js/audio-manifest.js) dibuat ulang
+otomatis oleh Claude. Kamu tidak perlu mengedit file apa pun.

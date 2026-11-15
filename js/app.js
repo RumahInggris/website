@@ -94,6 +94,18 @@
 
   /* ---------- suara (bawaan browser) ---------- */
   const LETTER_SOUND = { A: 'ay', B: 'bee', C: 'see', D: 'dee', E: 'ee', F: 'eff', G: 'jee', H: 'aitch', I: 'eye', J: 'jay', K: 'kay', L: 'ell', M: 'em', N: 'en', O: 'oh', P: 'pee', Q: 'cue', R: 'are', S: 'ess', T: 'tee', U: 'you', V: 'vee', W: 'double you', X: 'ex', Y: 'why', Z: 'zee' };
+  /* teks berwarna: **tebal**, ==stabilo kuning==, {{istilah}}, {{g|hijau}}, {{c|merah}} */
+  function rich(t) {
+    return esc(t == null ? '' : t)
+      .replace(/\[\[ipa:([A-Za-z]+)\]\]/g, (m, w) => ipaSpan(w))
+      .replace(/\{\{(?:([gc])\|)?(.+?)\}\}/g, (m, c, x) => '<span class="kw' + (c ? ' ' + c : '') + '">' + x + '</span>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong class="k">$1</strong>')
+      .replace(/==(.+?)==/g, '<mark class="hl">$1</mark>');
+  }
+  function plain(t) {
+    return String(t == null ? '' : t).replace(/\[\[ipa:[A-Za-z]+\]\]/g, '').replace(/\{\{(?:[gc]\|)?(.+?)\}\}/g, '$1').replace(/\*\*(.+?)\*\*/g, '$1').replace(/==(.+?)==/g, '$1');
+  }
+
   /* tanda "sudah diputar": kunci tiap tombol suara disimpan di DB.played */
   function audioKey(el) {
     const act = el.getAttribute('data-act');
@@ -102,10 +114,10 @@
     if (act === 'spell') return 'spell:' + el.getAttribute('data-w');
     return null;
   }
-  const AUDIO_SEL = '[data-act="say"],[data-act="letter"],[data-act="spell"]';
+  const AUDIO_SEL = '[data-act="say"],[data-act="letter"],[data-act="spell"],[data-act="spellx"],[data-act="sayx"]';
   function showHeard(el) {
     el.classList.add('heard');
-    const box = el.closest('li, .dlg-line, .word, .qa-q, .qa-a, .fix-good');
+    const box = el.closest('li, .dlg-line, .bub, .word, .qa-q, .qa-a, .fix-good');
     if (box) box.classList.add('heard');
   }
   function updateHeardBar() {
@@ -126,11 +138,30 @@
     document.querySelectorAll('#main ' + AUDIO_SEL).forEach((el) => { const k = audioKey(el); if (k && played()[k]) showHeard(el); });
     updateHeardBar();
     refreshAudioUI();
+    applyIpa();
   }
   /* ---------- pengaturan suara: aksen (Amerika / British), kecepatan, pilihan suara ---------- */
   const ACCENTS = { us: { label: 'Amerika', lang: 'en-US' }, gb: { label: 'British', lang: 'en-GB' } };
   const SPEEDS = { normal: { label: 'Normal', rate: 0.95 }, slow: { label: 'Pelan', rate: 0.8 }, vslow: { label: 'Sangat pelan', rate: 0.62 } };
   const accentKey = () => (DB.accent === 'gb' ? 'gb' : 'us');
+  /* simbol bunyi (IPA, gaya kamus Oxford): string biasa, atau {gb:'..', us:'..'} bila aksen berbeda */
+  const ipaOf = (v) => (typeof v === 'string' ? v : (v[accentKey()] || v.us || v.gb));
+  /* simbol bunyi nama huruf; O, R, Z berbeda antar aksen */
+  const LETTER_IPA = { A: 'eɪ', B: 'biː', C: 'siː', D: 'diː', E: 'iː', F: 'ef', G: 'dʒiː', H: 'eɪtʃ', I: 'aɪ', J: 'dʒeɪ', K: 'keɪ', L: 'el', M: 'em', N: 'en', O: { gb: 'əʊ', us: 'oʊ' }, P: 'piː', Q: 'kjuː', R: { gb: 'ɑː', us: 'ɑːr' }, S: 'es', T: 'tiː', U: 'juː', V: 'viː', W: 'ˈdʌbljuː', X: 'eks', Y: 'waɪ', Z: { gb: 'zed', us: 'ziː' } };
+  function ipaSeq(word) {
+    const L = String(word).toUpperCase().split('').filter((c) => LETTER_IPA[c]);
+    const out = [];
+    for (let i = 0; i < L.length; i++) {
+      const sym = ipaOf(LETTER_IPA[L[i]]);
+      if (L[i + 1] === L[i]) { out.push('/ˈdʌbl ' + sym + '/'); i++; } else out.push('/' + sym + '/');
+    }
+    return out.join(' ');
+  }
+  const ipaSpan = (word, cls) => '<span class="ipa-seq' + (cls ? ' ' + cls : '') + '" data-spell="' + esc(word) + '">' + esc(ipaSeq(word)) + '</span>';
+  function applyIpa() {
+    document.querySelectorAll('.ipa[data-ipa]').forEach((el) => { try { el.textContent = ipaOf(JSON.parse(el.getAttribute('data-ipa'))); } catch (e) { /* abaikan */ } });
+    document.querySelectorAll('.ipa-seq[data-spell]').forEach((el) => { el.textContent = ipaSeq(el.getAttribute('data-spell')); });
+  }
   const speedKey = () => (SPEEDS[DB.speed] ? DB.speed : 'slow');
   const hasTTS = () => 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function';
   const langOf = (v) => String((v && v.lang) || '').replace(/_/g, '-').toLowerCase();
@@ -170,15 +201,58 @@
   function prepText(t) {
     return String(t).replace(/…/g, ' ').replace(SPELL_RUN, spellRun).replace(/\ba\/an\b/gi, 'a or an').replace(/\s*\/\s*/g, ', ').replace(/\s+/g, ' ').trim();
   }
-  function speakRaw(text, el) {
+  /* ---------- rekaman penutur asli (file audio); suara browser jadi cadangan ---------- */
+  const AUD = window.YPI_AUDIO || { speakers: [], files: {} };
+  function clipSlug(t) {
+    let q = String(t).toLowerCase().replace(/[’‘]/g, "'").replace(/'/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (q.length > 70) q = q.slice(0, 70).replace(/-+$/, '') + '-' + (hashStr(q) % 46656).toString(36).padStart(3, '0');
+    return q || 'x';
+  }
+  window.YPI_CLIP_KEY = clipSlug;
+  const speakersFor = (acc) => (AUD.speakers || []).filter((x) => x.accent === acc);
+  const hasClip = (id, key) => !!(AUD.files && AUD.files[id] && AUD.files[id][key]);
+  let lastClipSpeaker = null; let curAudio = null;
+  function pickClip(key) {
+    const acc = accentKey(); const choice = DB['speaker_' + acc] || 'auto';
+    if (choice === 'browser') return null;
+    const all = speakersFor(acc).filter((x) => hasClip(x.id, key));
+    if (!all.length) return null;
+    let sp = choice !== 'auto' ? all.find((x) => x.id === choice) : null;
+    if (!sp) { const pool = all.length > 1 ? all.filter((x) => x.id !== lastClipSpeaker) : all; sp = pool[Math.floor(Math.random() * pool.length)]; }
+    lastClipSpeaker = sp.id;
+    return 'audio/' + sp.id + '/' + key + '.' + AUD.files[sp.id][key];
+  }
+  function stopAudio() { if (curAudio) { try { curAudio.pause(); } catch (e) { /* abaikan */ } curAudio = null; } }
+  function markPlayed(el) { const k = audioKey(el); if (k) { played()[k] = 1; save(); showHeard(el); updateHeardBar(); } }
+  function speakClip(key, ttsText, el, rate) {
+    const url = pickClip(key);
+    if (!url) { speakRaw(ttsText, el, rate); return; }
+    try {
+      stopAudio();
+      document.querySelectorAll('.say.playing, .letter.playing, .listen-btn.playing').forEach((x) => x.classList.remove('playing'));
+      if (hasTTS()) window.speechSynthesis.cancel();
+      const a = new Audio(url);
+      a.preservesPitch = true;
+      a.playbackRate = Math.min(1, Math.max(0.5, (rate || SPEEDS[speedKey()].rate) / 0.95));
+      curAudio = a;
+      if (el) el.classList.add('playing');
+      const done = () => { if (el) el.classList.remove('playing'); };
+      const fallback = () => { done(); if (curAudio === a) { curAudio = null; speakRaw(ttsText, el, rate); } };
+      a.onended = done; a.onerror = fallback;
+      const pr = a.play(); if (pr && pr.catch) pr.catch(fallback);
+      if (el) markPlayed(el);
+    } catch (e) { speakRaw(ttsText, el, rate); }
+  }
+  function speakRaw(text, el, rateOverride) {
     if (!hasTTS()) { toast('Suara belum tersedia di browser ini. Coba Chrome atau Edge.'); return; }
     try {
-      document.querySelectorAll('.say.playing, .letter.playing').forEach((x) => x.classList.remove('playing'));
+      stopAudio();
+      document.querySelectorAll('.say.playing, .letter.playing, .listen-btn.playing').forEach((x) => x.classList.remove('playing'));
       window.speechSynthesis.cancel();
       const acc = accentKey();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = ACCENTS[acc].lang;
-      u.rate = SPEEDS[speedKey()].rate;
+      u.rate = rateOverride || SPEEDS[speedKey()].rate;
       u.pitch = 1; u.volume = 1;
       const v = chosenVoice(acc);
       if (v) { u.voice = v; if (v.lang) u.lang = v.lang; }
@@ -196,7 +270,7 @@
       }
     } catch (e) { toast('Suara tidak bisa diputar.'); }
   }
-  function speakText(t, el) { speakRaw(prepText(t), el); }
+  function speakText(t, el) { speakClip(clipSlug(t), prepText(t), el); }
   function spellWords(w) {
     const L = String(w).toUpperCase().split('').filter((c) => LETTER_SOUND[c]);
     const out = [];
@@ -205,7 +279,7 @@
     }
     return out.join(', ');
   }
-  function speakSpell(w, el) { speakRaw(spellWords(w), el); }
+  function speakSpell(w, el, rate) { speakClip('spell-' + clipSlug(w), spellWords(w), el, rate); }
   const SAMPLE = 'Hello. How are you? I am fine, thank you.';
   let audioOpen = false;
   const FLAG = {
@@ -236,10 +310,15 @@
     const accBtns = Object.keys(ACCENTS).map((k) => '<button type="button" class="ic" data-act="setAccent" data-v="' + k + '" aria-pressed="' + (k === acc ? 'true' : 'false') + '" aria-label="Aksen ' + ACCENTS[k].label + '"><span class="ic-pic">' + FLAG[k] + '</span><span class="ic-t">' + (k === 'us' ? 'Amerika' : 'British') + '</span></button>').join('');
     const spdBtns = SPEED_ORDER.map((k) => '<button type="button" class="ic" data-act="setSpeed" data-v="' + k + '" aria-pressed="' + (k === spd ? 'true' : 'false') + '" aria-label="Kecepatan ' + SPEEDS[k].label + '"><span class="ic-pic ic-emoji" aria-hidden="true">' + SPEED_ICO[k] + '</span><span class="ic-t">' + SPEEDS[k].label + '</span></button>').join('');
     const many = list.length > 1;
+    const spk = speakersFor(acc); const spkChoice = DB['speaker_' + acc] || 'auto';
+    const useBrowser = !spk.length || spkChoice === 'browser';
+    const spkItems = [['auto', 'Acak']].concat(spk.map((x) => [x.id, x.name + (x.gender === 'm' ? ' (pria)' : x.gender === 'f' ? ' (wanita)' : '')])).concat([['browser', 'Suara komputer']]);
+    const spkRow = spk.length ? '<div class="spk-row" role="group" aria-label="Penutur rekaman"><span class="spk-lbl">Penutur:</span>' + spkItems.map((it) => '<button type="button" class="spk-btn" data-act="setSpeaker" data-v="' + esc(it[0]) + '" aria-pressed="' + (spkChoice === it[0] ? 'true' : 'false') + '">' + esc(it[1]) + '</button>').join('') + '</div>' : '';
+    const voiceBtn = '<button type="button" class="ic ic-voice" data-act="nextVoice"' + (many ? '' : ' aria-disabled="true"') + ' aria-label="Ganti suara. Sekarang: ' + esc(shortVoice(cur)) + '"><span class="ic-pic">' + ICON.sound(22) + '</span><span class="ic-t">Suara: <strong>' + esc(shortVoice(cur)) + '</strong>' + (many ? ' <span class="ic-n">(' + (Math.max(0, list.indexOf(cur)) + 1) + '/' + list.length + ')</span>' : '') + '</span><span class="ic-chev" aria-hidden="true">⟳</span></button>';
     return '<div class="audio-settings"><div class="ic-row"><div class="ic-group" role="group" aria-label="Aksen">' + accBtns + '</div><div class="ic-sep" aria-hidden="true"></div><div class="ic-group" role="group" aria-label="Kecepatan">' + spdBtns + '</div></div>' +
-      '<div class="ic-row ic-voice-row"><button type="button" class="ic ic-voice" data-act="nextVoice"' + (many ? '' : ' aria-disabled="true"') + ' aria-label="Ganti suara. Sekarang: ' + esc(shortVoice(cur)) + '"><span class="ic-pic">' + ICON.sound(22) + '</span><span class="ic-t">Suara: <strong>' + esc(shortVoice(cur)) + '</strong>' + (many ? ' <span class="ic-n">(' + (Math.max(0, list.indexOf(cur)) + 1) + '/' + list.length + ')</span>' : '') + '</span><span class="ic-chev" aria-hidden="true">⟳</span></button>' +
+      spkRow + '<div class="ic-row ic-voice-row">' + (useBrowser ? voiceBtn : '') +
       '<button type="button" class="ic ic-play" data-act="testVoice" aria-label="Tes suara"><span class="ic-pic"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span><span class="ic-t">Tes</span></button></div>' +
-      '<details class="ic-tip"' + (audioOpen ? ' open' : '') + '><summary>Suara kurang natural?</summary><p class="muted aset-tip">' + tip + '</p></details></div>';
+      (useBrowser ? '<details class="ic-tip"' + (audioOpen ? ' open' : '') + '><summary>Suara kurang natural?</summary><p class="muted aset-tip">' + tip + '</p></details>' : '') + '</div>';
   }
   function refreshAudioUI() {
     const bar = $('#audio-bar');
@@ -472,17 +551,18 @@
       const picked = st[qi];
       const answered = picked !== undefined;
       const order = shuffledIdx(it.options.length, key + ':' + qi, false);
-      const opts = order.map((oi) => {
+      const longOpt = it.options.some((o) => String(o).length > 18);
+      const opts = order.map((oi, pos) => {
         let cls = 'opt'; let tag = '';
         if (answered) {
           if (oi === 0) { cls += ' right'; tag = '<span class="tag">' + ICON.check(16) + 'Benar</span>'; }
           else if (oi === picked) { cls += ' wrong'; tag = '<span class="tag">' + ICON.x(16) + 'Belum tepat</span>'; }
           else cls += ' dim';
         }
-        return '<button type="button" class="' + cls + '" data-act="mq" data-k="' + k + '" data-q="' + qi + '" data-i="' + oi + '"' + (answered ? ' disabled' : '') + '><span>' + esc(it.options[oi]) + '</span>' + tag + '</button>';
+        return '<button type="button" class="' + cls + '" data-act="mq" data-k="' + k + '" data-q="' + qi + '" data-i="' + oi + '"' + (answered ? ' disabled' : '') + '><span class="opt-t"><i class="opt-l" aria-hidden="true">' + String.fromCharCode(65 + pos) + '</i><span>' + esc(it.options[oi]) + '</span></span>' + tag + '</button>';
       }).join('');
-      const fb = answered ? '<p class="mq-why ' + (picked === 0 ? 'right' : 'wrong') + '" role="status"><strong>' + (picked === 0 ? 'Tepat!' : 'Belum tepat.') + '</strong> ' + esc(it.why) + '</p>' : '';
-      return '<div class="mq-q"><p class="mq-qt"><span>' + (qi + 1) + '. ' + esc(it.q) + '</span>' + (it.say ? sayX(it.say) : (it.spell ? spellX(it.spell) : '')) + '</p><div class="opts" role="group" aria-label="Pilihan jawaban">' + opts + '</div>' + fb + '</div>';
+      const fb = answered ? '<p class="mq-why ' + (picked === 0 ? 'right' : 'wrong') + '" role="status"><strong>' + (picked === 0 ? 'Tepat!' : 'Belum tepat.') + '</strong> ' + rich(it.why) + '</p>' : '';
+      return '<div class="mq-q"><p class="mq-qt"><span>' + (qi + 1) + '. ' + esc(it.q) + '</span>' + (it.say ? sayX(it.say) : (it.spell ? spellX(it.spell) : '')) + '</p><div class="opts mq-opts n' + it.options.length + (longOpt ? ' long' : '') + '" role="group" aria-label="Pilihan jawaban">' + opts + '</div>' + fb + '</div>';
     }).join('');
     const perfect = right === n;
     const end = done === n
@@ -546,7 +626,7 @@
     else {
       inner = '<div class="tbl-wrap' + (stack ? ' stack-wrap' : '') + '"><table class="tbl' + (stack ? ' stack' : '') + '"><thead><tr>' +
         b.head.map((h) => '<th scope="col">' + esc(h) + '</th>').join('') + '</tr></thead><tbody>' +
-        b.rows.map((r) => '<tr>' + r.map((c, i) => '<td data-label="' + esc(b.head[i]) + '"' + (say.indexOf(i) < 0 && /^artinya$/i.test(b.head[i]) ? ' class="mean"' : '') + '>' + (say.indexOf(i) >= 0 ? '<span class="cellsay">' + sayBtn(c, 'inline') + '<span>' + esc(c) + '</span></span>' : esc(c)) + '</td>').join('') + '</tr>').join('') +
+        b.rows.map((r) => '<tr>' + r.map((c, i) => '<td data-label="' + esc(b.head[i]) + '"' + (say.indexOf(i) < 0 && /^artinya$/i.test(b.head[i]) ? ' class="mean"' : '') + '>' + (say.indexOf(i) >= 0 ? '<span class="cellsay">' + sayBtn(plain(c), 'inline') + '<span>' + rich(c) + '</span></span>' : rich(c)) + '</td>').join('') + '</tr>').join('') +
         '</tbody></table></div>';
     }
     return '<section class="card stack" data-cardsec="' + k + '"><div class="sec-row"><h3 style="font-size:20px">' + esc(b.title) + '</h3>' + sw + '</div>' + inner + '</section>';
@@ -586,13 +666,207 @@
     const bar = $('#study-bar');
     document.body.classList.toggle('hide-id', !!DB.hideId);
     if (!bar) return;
-    const has = document.querySelector('#main .phr .id, #main .ent-head .id, #main .dlg-line .id, #main .qa small.id, #main td.mean');
+    const has = document.querySelector('#main .phr .id, #main .ent-head .id, #main .dlg-line .id, #main .bub .id, #main .qa small.id, #main td.mean');
     if (!has) { bar.hidden = true; bar.innerHTML = ''; return; }
     const on = !!DB.hideId;
     bar.hidden = false;
     bar.innerHTML = '<button type="button" class="study-btn' + (on ? ' on' : '') + '" data-act="toggleHide" aria-pressed="' + on + '"><span class="study-ico" aria-hidden="true">' + (on ? ICON.eyeoff(22) : ICON.eye(22)) + '</span><span class="study-t"><strong>' + (on ? 'Arti sedang disembunyikan' : 'Sembunyikan arti') + '</strong><small>' + (on ? 'Tebak dulu, lalu tekan sebuah baris untuk mengintip artinya. Tekan di sini untuk menampilkan semuanya.' : 'Tutup terjemahan Indonesia supaya kamu bisa menebak dulu. Bagus untuk menghafal.') + '</small></span></button>';
   }
 
+  /* ---------- tebak dulu, lalu buka jawaban (satu per satu) ---------- */
+  const RVS = {};
+  function rvState(k) { return (P.rv[k] = P.rv[k] || { open: {} }); }
+  function miniClock(h, m) {
+    const ah = (h % 12) * 30 + m * 0.5; const am = m * 6; let t = '';
+    for (let i = 0; i < 12; i++) { const a = (i * 30 * Math.PI) / 180; t += '<line x1="' + (50 + 38 * Math.sin(a)).toFixed(1) + '" y1="' + (50 - 38 * Math.cos(a)).toFixed(1) + '" x2="' + (50 + 44 * Math.sin(a)).toFixed(1) + '" y2="' + (50 - 44 * Math.cos(a)).toFixed(1) + '" stroke="#1F2340" stroke-width="' + (i % 3 === 0 ? 4 : 2) + '" stroke-linecap="round"/>'; }
+    return '<svg viewBox="0 0 100 100" class="rv-clock" aria-hidden="true"><circle cx="50" cy="50" r="47" fill="#fff" stroke="#1F2340" stroke-width="4"/>' + t +
+      '<line x1="50" y1="52" x2="50" y2="28" stroke="#1F2340" stroke-width="5" stroke-linecap="round" transform="rotate(' + ah + ' 50 50)"/>' +
+      '<line x1="50" y1="54" x2="50" y2="15" stroke="#4B3FE0" stroke-width="3.5" stroke-linecap="round" transform="rotate(' + am + ' 50 50)"/><circle cx="50" cy="50" r="4" fill="#FFC93C" stroke="#1F2340" stroke-width="2"/></svg>';
+  }
+  function flipEx(it, x) {
+    if (!it.flip) return '';
+    const tm = /(\d{1,2})\.(\d{2})/.exec(x[2] || x[1]);
+    if (!tm) return '';
+    const extra = (/\((.*?)\)/.exec(x[1]) || [])[1] || (x[2] ? x[1] : '');
+    return '<li class="flip"><div class="flip-q">' + miniClock(Number(tm[1]), Number(tm[2])) + '<b class="flip-time">' + tm[0] + '</b></div>' +
+      '<div class="flip-a">' + sayBtn(plain(x[0]), 'inline') + '<div><span class="en2">' + rich(x[0]) + '</span>' + (extra ? '<span class="fx">' + rich(extra) + '</span>' : '') + '</div></div></li>';
+  }
+  function revealHTML(b, key) {
+    RVS[key] = b; const st = rvState(key); const k = esc(key);
+    const n = b.items.length; const openN = b.items.filter((_, i) => st.open[i]).length;
+    const rows = b.items.map((it, i) => {
+      if (b.spell) {
+        const w = Array.isArray(it) ? it[0] : it; const hint = Array.isArray(it) ? it[1] : '';
+        const open = !!st.open[i];
+        const L = String(w).toUpperCase().split('').filter((c) => LETTER_SOUND[c]);
+        return '<li class="rv-item' + (open ? ' open' : '') + '">' +
+          '<div class="rv-q"><div class="rv-front"><b>' + esc(w) + '</b><small>' + esc(b.ask || 'Coba eja dengan suara pelan.') + '</small></div></div>' +
+          '<div class="rv-a">' + (open ? '<div class="rv-ans"><button type="button" class="say inline" data-act="spell" data-w="' + esc(w) + '" aria-label="Dengarkan ejaan ' + esc(w) + '">' + ICON.sound(18) + '</button><div class="rv-spell"><span class="rv-letters">' + L.join(' - ') + '</span>' + ipaSpan(w, 'rv-en') + '</div></div>' + (hint ? '<p class="rv-hint">' + rich(hint) + '</p>' : '') :
+            '<span class="rv-ph" aria-hidden="true">? ? ?</span><span class="rv-ph-t">Tebak dulu, ucapkan huruf demi huruf.</span><span class="sr-only">Jawaban disembunyikan.</span>') + '</div>' +
+          '<button type="button" class="rv-btn' + (open ? ' on' : '') + '" data-act="rvToggle" data-k="' + k + '" data-i="' + i + '" aria-expanded="' + open + '">' + (open ? ICON.eyeoff(18) + '<span>Sembunyikan</span>' : ICON.eye(18) + '<span>Lihat ejaan</span>') + '</button></li>';
+      }
+      const open = !!st.open[i]; const tm = /^(\d{1,2})[.:](\d{2})$/.exec(it[0]);
+      const say = it[1].replace(/\s*\(.*?\)\s*/g, ' ').trim();
+      return '<li class="rv-item' + (open ? ' open' : '') + '">' +
+        '<div class="rv-q">' + (tm ? miniClock(Number(tm[1]), Number(tm[2])) : '') + '<div class="rv-front"><b>' + esc(it[0]) + '</b><small>' + esc(b.ask || 'Bagaimana cara membacanya?') + '</small></div></div>' +
+        '<div class="rv-a">' + (open ? '<div class="rv-ans">' + sayBtn(say, 'inline') + '<span class="rv-en">' + esc(it[1]) + '</span></div>' + (it[2] ? '<p class="rv-hint">' + esc(it[2]) + '</p>' : '') :
+          '<span class="rv-ph" aria-hidden="true">? ? ?</span><span class="rv-ph-t">Tebak dulu, ucapkan dengan suara pelan.</span>' + '<span class="sr-only">Jawaban disembunyikan.</span>') + '</div>' +
+        '<button type="button" class="rv-btn' + (open ? ' on' : '') + '" data-act="rvToggle" data-k="' + k + '" data-i="' + i + '" aria-expanded="' + open + '">' + (open ? ICON.eyeoff(18) + '<span>Sembunyikan</span>' : ICON.eye(18) + '<span>Lihat jawaban</span>') + '</button></li>';
+    }).join('');
+    return '<section class="card stack rv-sec" data-rv="' + k + '"><div class="sec-row"><h3 style="font-size:20px">' + esc(b.title) + '</h3><span class="rv-count">Dibuka ' + openN + ' dari ' + n + '</span></div>' +
+      (b.lead ? '<p class="muted">' + b.lead + '</p>' : '') +
+      '<ul class="rv-list">' + rows + '</ul>' +
+      '<div class="rv-tools"><button type="button" class="chip-btn" data-act="rvAll" data-k="' + k + '" data-v="open">Buka semua ' + (b.spell ? 'ejaan' : 'jawaban') + '</button><button type="button" class="chip-btn" data-act="rvAll" data-k="' + k + '" data-v="close">Tutup semua</button></div></section>';
+  }
+  function refreshReveal(k) {
+    const el = attrFind('data-rv', k);
+    if (el && RVS[k]) { el.outerHTML = revealHTML(RVS[k], k); applyHeard(); }
+  }
+  function revealAct(act, k, v, i) {
+    const b = RVS[k]; if (!b) return;
+    const st = rvState(k);
+    if (act === 'rvToggle') { st.open[i] = !st.open[i]; }
+    else { b.items.forEach((_, j) => { st.open[j] = v === 'open'; }); }
+    refreshReveal(k);
+  }
+
+  /* ---------- blok "Penjelasan dulu" ---------- */
+  function explainHTML(b) {
+    const pts = (b.points || []).map((x) => '<div class="xp"><span class="xp-ico" aria-hidden="true">' + x.icon + '</span><b>' + esc(x.title) + '</b><p>' + esc(x.text) + '</p></div>').join('');
+    return '<section class="card stack xp-sec"><div class="xp-top"><span class="xp-badge">Penjelasan dulu</span><h3>' + esc(b.title) + '</h3></div>' +
+      (b.lead ? '<p class="xp-lead">' + b.lead + '</p>' : '') +
+      '<div class="xp-grid' + (b.flow ? ' flow' : '') + ' n' + (b.points || []).length + '">' + pts + '</div>' +
+      (b.note ? '<p class="xp-note">' + b.note + '</p>' : '') + '</section>';
+  }
+
+  /* ---------- generator jam (analog + digital) ---------- */
+  const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  const TENS = { 2: 'twenty', 3: 'thirty', 4: 'forty', 5: 'fifty' };
+  const numWord = (n) => (n < 20 ? ONES[n] : TENS[Math.floor(n / 10)] + (n % 10 ? '-' + ONES[n % 10] : ''));
+  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  const ROMAN = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+  const h12 = (h) => (h % 12) || 12;
+  const minWord = (n) => numWord(n) + (n % 5 === 0 ? '' : (n === 1 ? ' minute' : ' minutes'));
+  function readBritish(h, m) {
+    const H = numWord(h12(h)); const N = numWord(h12(h + 1));
+    if (m === 0) return { t: H + " o'clock", why: 'Menit 00 berarti jam tepat, jadi cukup sebut jamnya lalu o\'clock.' };
+    if (m === 15) return { t: 'a quarter past ' + H, why: 'Menit 15 = a quarter (seperempat) lewat jam ' + h12(h) + '. Bisa juga fifteen past ' + H + '.' };
+    if (m === 30) return { t: 'half past ' + H, why: 'Menit 30 = half (setengah) lewat jam ' + h12(h) + '.' };
+    if (m === 45) return { t: 'a quarter to ' + N, why: 'Menit 45 = tinggal 15 menit menuju jam ' + h12(h + 1) + ', yaitu a quarter to. Bisa juga fifteen to ' + N + '.' };
+    if (m < 30) return { t: minWord(m) + ' past ' + H, why: 'Menit ' + m + ' ada di 1–30, jadi pakai past: sebut menitnya dulu, lalu past, lalu jam ' + h12(h) + '.' };
+    const r = 60 - m;
+    return { t: minWord(r) + ' to ' + N, why: 'Menit ' + m + ' lebih dari 30, jadi pakai to. Sisa 60 − ' + m + ' = ' + r + ' menit menuju jam ' + h12(h + 1) + '.' };
+  }
+  function readAmerican(h, m) {
+    const H = numWord(h12(h));
+    if (m === 0) return { t: H + " o'clock", why: 'Menit 00: sebut jam lalu o\'clock.' };
+    if (m < 10) return { t: H + ' oh ' + numWord(m), why: 'Jam dulu, lalu menit. Menit di bawah 10 dibaca dengan oh di depannya.' };
+    return { t: H + ' ' + numWord(m), why: 'Jam dulu, lalu menit, dibaca seperti angka biasa.' };
+  }
+  function dayPart(h) { return h < 4 ? 'dini hari' : h >= 4 && h < 11 ? 'pagi' : h >= 11 && h < 15 ? 'siang' : h >= 15 && h < 18 ? 'sore' : 'malam'; }
+  const pad2 = (n) => (n < 10 ? '0' : '') + n;
+  function clockState(key, b) {
+    return (P.clock[key] = P.clock[key] || { h: 14, m: 10, fmt: '12', step: 5, face: 'num', tebak: true, reveal: false, full: false, ah: null, am: null });
+  }
+  const targetAngles = (st) => ({ ah: (st.h % 12) * 30 + st.m * 0.5, am: st.m * 6 });
+  function nearest(cur, target) { const d = ((target - (((cur % 360) + 360) % 360) + 540) % 360) - 180; return cur + d; }
+  function analogSVG(face, ah, am) {
+    let t = '';
+    for (let i = 0; i < 60; i++) {
+      const a = (i * 6 * Math.PI) / 180; const big = i % 5 === 0;
+      const r1 = big ? 122 : 128; const r2 = 134;
+      t += '<line x1="' + (150 + r1 * Math.sin(a)).toFixed(1) + '" y1="' + (150 - r1 * Math.cos(a)).toFixed(1) + '" x2="' + (150 + r2 * Math.sin(a)).toFixed(1) + '" y2="' + (150 - r2 * Math.cos(a)).toFixed(1) + '" stroke="#1F2340" stroke-width="' + (big ? 3 : 1.4) + '" stroke-linecap="round"/>';
+    }
+    let nums = '';
+    for (let n = 1; n <= 12; n++) {
+      const a = (n * 30 * Math.PI) / 180;
+      nums += '<text x="' + (150 + 100 * Math.sin(a)).toFixed(1) + '" y="' + (150 - 100 * Math.cos(a)).toFixed(1) + '" text-anchor="middle" dominant-baseline="central" font-family="Poppins,Segoe UI,sans-serif" font-weight="700" font-size="' + (face === 'roman' ? 17 : 25) + '" fill="#1F2340">' + (face === 'roman' ? ROMAN[n % 12] : n) + '</text>';
+    }
+    return '<svg viewBox="0 0 300 300" class="clk-svg" aria-hidden="true"><circle cx="150" cy="150" r="144" fill="#fff" stroke="#1F2340" stroke-width="6"/>' + t + nums +
+      '<g class="hand hh" style="transform:rotate(' + ah + 'deg)"><line x1="150" y1="158" x2="150" y2="86" stroke="#1F2340" stroke-width="10" stroke-linecap="round"/></g>' +
+      '<g class="hand hm" style="transform:rotate(' + am + 'deg)"><line x1="150" y1="162" x2="150" y2="46" stroke="#4B3FE0" stroke-width="6" stroke-linecap="round"/></g>' +
+      '<circle cx="150" cy="150" r="10" fill="#FFC93C" stroke="#1F2340" stroke-width="3"/></svg>';
+  }
+  function clockReading(st, k) {
+    const br = readBritish(st.h, st.m); const am = readAmerican(st.h, st.m);
+    if (st.tebak && !st.reveal) {
+      return '<div class="clk-read"><p class="clk-guess">Mode tebak: lihat jamnya, lalu coba ucapkan dalam bahasa Inggris. Setelah itu tekan tombol di bawah untuk mengecek.</p><button type="button" class="btn btn-primary" data-act="clkReveal" data-k="' + k + '">Lihat jawaban</button></div>';
+    }
+    const row = (cls, tag, r) => '<div class="clk-row ' + cls + '"><span class="clk-tag">' + tag + '</span><b>' + esc(cap(r.t)) + '</b>' + sayX("It's " + r.t + '.') + '</div><p class="clk-why">' + esc(r.why) + '</p>';
+    return '<div class="clk-read" aria-live="polite">' + row('brit', 'British', br) + row('amer', 'American', am) + '<p class="clk-meta">Waktu: <strong>' + dayPart(st.h) + '</strong> (' + (st.h < 12 ? 'a.m.' : 'p.m.') + ')</p></div>';
+  }
+  function clockHTML(b, key, st, angles) {
+    const k = esc(key);
+    const digital = st.fmt === '24' ? pad2(st.h) + ':' + pad2(st.m) : h12(st.h) + ':' + pad2(st.m);
+    const ampm = st.fmt === '24' ? '' : '<span class="clk-ampm">' + (st.h < 12 ? 'AM' : 'PM') + '</span>';
+    const chip = (act, v, label, on) => '<button type="button" class="chip-btn" data-act="' + act + '" data-k="' + k + '" data-v="' + v + '" aria-pressed="' + on + '">' + label + '</button>';
+    const steps = [['1', '1 menit'], ['5', '5 menit'], ['15', '15 menit'], ['30', '30 menit'], ['60', 'Jam tepat']];
+    return '<section class="card stack clk-sec' + (st.full ? ' clk-full' : '') + '" data-clock="' + k + '">' +
+      '<div class="sec-row"><h3 style="font-size:20px">' + esc(b.title) + '</h3><button type="button" class="chip-btn" data-act="clkFull" data-k="' + k + '">' + (st.full ? 'Tutup layar penuh' : 'Layar penuh') + '</button></div>' +
+      (b.lead ? '<p class="muted">' + b.lead + '</p>' : '') +
+      '<div class="clk-main"><button type="button" class="clk-face" data-act="clkNew" data-k="' + k + '" role="img" aria-label="Jam analog menunjukkan ' + digital + '. Tekan untuk jam acak berikutnya.">' + analogSVG(st.face, angles.ah, angles.am) + '</button>' +
+      '<div class="clk-side"><button type="button" class="clk-digital" data-act="clkNew" data-k="' + k + '" aria-label="Jam digital ' + digital + '. Tekan untuk jam acak berikutnya."><span class="clk-time">' + digital + '</span>' + ampm + '</button>' + clockReading(st, k) + '</div></div>' +
+      '<div class="clk-actions"><button type="button" class="btn btn-primary clk-new" data-act="clkNew" data-k="' + k + '">Jam acak</button>' +
+      '<div class="clk-nudge" role="group" aria-label="Geser waktu"><button type="button" class="chip-btn" data-act="clkStep" data-k="' + k + '" data-v="-60">− 1 jam</button><button type="button" class="chip-btn" data-act="clkStep" data-k="' + k + '" data-v="-5">− 5 mnt</button><button type="button" class="chip-btn" data-act="clkStep" data-k="' + k + '" data-v="5">+ 5 mnt</button><button type="button" class="chip-btn" data-act="clkStep" data-k="' + k + '" data-v="60">+ 1 jam</button></div></div>' +
+      '<details class="clk-set"' + (st.setOpen ? ' open' : '') + '><summary>Pengaturan jam</summary><div class="clk-opts">' +
+      '<div class="clk-og"><span class="aset-l">Interval menit acak</span><div class="clk-chips">' + steps.map((x) => chip('clkStepSet', x[0], x[1], String(st.step) === x[0])).join('') + '</div></div>' +
+      '<div class="clk-og"><span class="aset-l">Format jam digital</span><div class="clk-chips">' + chip('clkFmt', '12', '12 jam (AM/PM)', st.fmt === '12') + chip('clkFmt', '24', '24 jam', st.fmt === '24') + '</div></div>' +
+      '<div class="clk-og"><span class="aset-l">Angka di jam analog</span><div class="clk-chips">' + chip('clkFace', 'num', 'Angka biasa', st.face === 'num') + chip('clkFace', 'roman', 'Angka Romawi', st.face === 'roman') + '</div></div>' +
+      '<div class="clk-og"><span class="aset-l">Mode tebak</span><div class="clk-chips">' + chip('clkTebak', '1', st.tebak ? 'Aktif: jawaban disembunyikan' : 'Mati: jawaban langsung tampil', st.tebak) + '</div></div>' +
+      '</div></details></section>';
+  }
+  function clockSection(b, key) {
+    CLOCKS[key] = b;
+    const st = clockState(key, b);
+    const tg = targetAngles(st);
+    if (st.ah === null) { st.ah = tg.ah; st.am = tg.am; }
+    return clockHTML(b, key, st, { ah: st.ah, am: st.am });
+  }
+  const CLOCKS = {};
+  function refreshClock(k) {
+    const b = CLOCKS[k]; const root = attrFind('data-clock', k);
+    if (!b || !root) return;
+    const st = clockState(k, b);
+    const tg = targetAngles(st);
+    const from = { ah: st.ah, am: st.am };
+    const to = { ah: nearest(st.ah, tg.ah), am: nearest(st.am, tg.am) };
+    const wasOpen = root.querySelector('details.clk-set'); st.setOpen = !!(wasOpen && wasOpen.open);
+    root.outerHTML = clockHTML(b, k, st, from);
+    st.ah = to.ah; st.am = to.am;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const r = attrFind('data-clock', k); if (!r) return;
+      const hh = r.querySelector('.hh'); const hm = r.querySelector('.hm');
+      if (hh) hh.style.transform = 'rotate(' + to.ah + 'deg)';
+      if (hm) hm.style.transform = 'rotate(' + to.am + 'deg)';
+    }));
+  }
+  function clockAct(act, k, v) {
+    const b = CLOCKS[k]; if (!b) return;
+    const st = clockState(k, b);
+    if (act === 'clkNew') {
+      const step = st.step; const per = step >= 60 ? 1 : Math.floor(60 / step);
+      let h; let m; let guard = 0;
+      do { h = Math.floor(Math.random() * 24); m = (step >= 60 ? 0 : Math.floor(Math.random() * per) * step); guard++; } while (h === st.h && m === st.m && guard < 20);
+      st.h = h; st.m = m; st.reveal = false;
+    } else if (act === 'clkStep') {
+      let total = st.h * 60 + st.m + Number(v);
+      total = ((total % 1440) + 1440) % 1440;
+      st.h = Math.floor(total / 60); st.m = total % 60; st.reveal = false;
+    } else if (act === 'clkStepSet') { st.step = Number(v); }
+    else if (act === 'clkFmt') { st.fmt = v === '24' ? '24' : '12'; }
+    else if (act === 'clkFace') { st.face = v === 'roman' ? 'roman' : 'num'; }
+    else if (act === 'clkTebak') { st.tebak = !st.tebak; st.reveal = false; }
+    else if (act === 'clkReveal') { st.reveal = true; }
+    else if (act === 'clkFull') { st.full = !st.full; document.body.classList.toggle('clk-lock', st.full); }
+    refreshClock(k);
+  }
+
+  function chatScenes(scenes) {
+    return scenes.map((sc) => '<div class="chat"><p class="chat-title">' + esc(sc.title) + '</p>' + sc.msgs.map((m, mi) => {
+      const right = m.side === 'r';
+      return '<div class="bub-row ' + (right ? 'r' : 'l') + '" style="animation-delay:' + Math.min(mi * 0.06, 0.5) + 's"><span class="bub-av ' + (right ? 'r' : 'l') + '" aria-hidden="true">' + esc(m.who.charAt(0)) + '</span><div class="bub ' + (right ? 'r' : 'l') + '">' + (m.tag ? '<span class="bub-tag">' + esc(m.tag) + '</span>' : '') + '<span class="bub-who">' + esc(m.who) + '</span><div class="bub-main"><span class="bub-en">' + rich(m.en) + '</span>' + sayBtn(plain(m.en), 'inline') + '</div>' + (m.id ? '<small class="id">' + rich(m.id) + '</small>' : '') + '</div></div>';
+    }).join('') + '</div>').join('');
+  }
   function blocks(list, kp) {
     return list.map((b, bi) => {
       const bkey = kp + ':' + bi;
@@ -604,12 +878,15 @@
       }
       if (b.t === 'table') return tableSection(b, bkey);
       if (b.t === 'miniquiz') return mqHTML(bkey, b);
+      if (b.t === 'explain') return explainHTML(b);
+      if (b.t === 'reveal') return revealHTML(b, bkey);
+      if (b.t === 'clock') return clockSection(b, bkey);
       if (b.t === 'figure') return '<figure class="card stack fig"><h3 style="font-size:20px">' + esc(b.title) + '</h3><div class="fig-box">' + b.svg + '</div>' + (b.caption ? '<figcaption class="muted">' + b.caption + '</figcaption>' : '') + '</figure>';
       if (b.t === 'qa') {
         return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3>' + (b.hint ? '<p class="muted" style="font-size:15px">' + esc(b.hint) + '</p>' : '') +
           b.groups.map((g, gi) => '<details class="qa-group"' + (gi === 0 ? ' open' : '') + '><summary><span>' + esc(g.title) + '</span><small>' + g.items.length + ' pertanyaan</small></summary>' +
             g.items.map((it) => '<div class="qa"><div class="qa-q">' + sayBtn(it[0]) + '<div><span class="qa-tag">Tanya</span><b>' + esc(it[0]) + '</b><small class="id">' + esc(it[2]) + '</small></div></div>' +
-              '<div class="qa-a">' + sayBtn(it[1]) + '<div><span class="qa-tag">Jawab</span><b>' + esc(it[1]) + '</b></div></div></div>').join('') + (g.quiz ? mqHTML(bkey + ':g' + gi, g.quiz) : '') + '</details>').join('') + '</section>';
+              '<div class="qa-a">' + sayBtn(plain(it[1])) + '<div><span class="qa-tag">Jawab</span><b>' + rich(it[1]) + '</b></div></div></div>').join('') + (g.quiz ? mqHTML(bkey + ':g' + gi, g.quiz) : '') + '</details>').join('') + '</section>';
       }
       if (b.t === 'compare') {
         return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3><div class="cmp">' +
@@ -617,34 +894,41 @@
             '<p class="cmp-sub">Dipakai saat</p><ul class="cmp-when">' + c.when.map((w) => '<li>' + esc(w) + '</li>').join('') + '</ul>' +
             (c.groups || []).map((g) => '<p class="cmp-sub">' + esc(g.title) + '</p><ul class="phr">' +
               g.items.map((it) => '<li>' + sayBtn(it[0]) + '<div><span class="en">' + esc(it[0]) + '</span><span class="id">' + esc(it[1]) + '</span></div></li>').join('') + '</ul>').join('') +
-            (c.dialog ? '<p class="cmp-sub">' + esc(c.dialog.title) + '</p><div class="dlg">' +
-              c.dialog.lines.map((ln) => '<div class="dlg-line"><b>' + esc(ln[0]) + '</b><span>' + esc(ln[1]) + '</span>' + sayBtn(ln[1], 'inline') + '</div>').join('') + '</div>' : '') +
+            (c.dialog ? chatScenes([{ title: c.dialog.title, msgs: c.dialog.lines.map((ln) => ({ who: ln[0] === 'A' ? 'Rina' : 'Budi', side: ln[0] === 'A' ? 'l' : 'r', en: ln[1], id: ln[2] })) }]) : '') +
             '</div>').join('') + '</div></section>';
       }
       if (b.t === 'entries') {
         return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3>' + b.items.map((it) => {
           const head = it.title
-            ? '<div class="ent-head"><div><span class="en">' + esc(it.title) + '</span><span class="sub">' + esc(it.id) + '</span></div></div>'
+            ? '<div class="ent-head"><div><span class="en">' + esc(it.title) + '</span><span class="sub">' + rich(it.id) + '</span></div></div>'
             : '<div class="ent-head">' + sayBtn(it.en) + '<div><span class="en">' + esc(it.en) + '</span><span class="id">' + esc(it.id) + '</span></div></div>';
           const rows = it.rows || [['Dipakai saat', it.when], ['Jawaban', it.reply]];
-          return '<div class="ent">' + head + rows.map((r) => '<p class="ent-row"><b>' + esc(r[0]) + '</b>' + esc(r[1]) + '</p>').join('') +
-            '<p class="ent-row"><b>Contoh kalimat</b></p><ul class="ent-ex">' + it.ex.map((x) => '<li>' + sayBtn(x[0], 'inline') + '<div><span class="en2">' + esc(x[0]) + '</span><span class="id">' + esc(x[1]) + '</span></div></li>').join('') + '</ul></div>';
+          return '<div class="ent">' + head + rows.map((r) => r[0] === 'Rumus' ? '<p class="ent-row formula"><b>Rumus</b><span class="fml">' + String(r[1]).split('  |  ').map(rich).join('<br>') + '</span></p>' : '<p class="ent-row"><b>' + esc(r[0]) + '</b>' + rich(r[1]) + '</p>').join('') +
+            '<p class="ent-row"><b>' + (it.flip ? 'Tebak dulu' : 'Contoh kalimat') + '</b>' + (it.flip ? '<span class="flip-hint">Lihat jamnya, ucapkan dalam bahasa Inggris, lalu ketuk baris atau tombol suara untuk mengecek.</span>' : '') + '</p><ul class="ent-ex">' + it.ex.map((x) => flipEx(it, x) || '<li>' + sayBtn(plain(x[0]), 'inline') + '<div><span class="en2">' + rich(x[0]) + '</span><span class="id">' + rich(x[1]) + '</span></div></li>').join('') + '</ul></div>';
         }).join('') + '</section>';
       }
+      if (b.t === 'chat') {
+        return '<section class="card stack chat-sec"><h3 style="font-size:20px">' + esc(b.title) + '</h3>' + (b.lead ? '<p class="muted">' + b.lead + '</p>' : '') +
+          chatScenes(b.scenes) + (b.note ? '<p class="xp-note">' + b.note + '</p>' : '') + '</section>';
+      }
       if (b.t === 'dialogs') {
-        return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3>' + b.items.map((d) =>
-          '<div class="ent"><p class="cmp-sub" style="margin:0 0 8px">' + esc(d.title) + '</p><div class="dlg">' +
-          d.lines.map((ln) => '<div class="dlg-line"><b>' + esc(ln[0]) + '</b><span>' + esc(ln[1]) + (ln[2] ? '<small class="id">' + esc(ln[2]) + '</small>' : '') + '</span>' + sayBtn(ln[1], 'inline') + '</div>').join('') + '</div></div>').join('') + '</section>';
+        const NM = { A: 'Rina', B: 'Budi' };
+        return '<section class="card stack chat-sec"><h3 style="font-size:20px">' + esc(b.title) + '</h3><p class="muted">Baca seperti membaca chat. Tekan ikon suara untuk mendengar tiap kalimat.</p>' +
+          chatScenes(b.items.map((d) => ({ title: d.title, msgs: d.lines.map((ln) => ({ who: NM[ln[0]] || ln[0], side: ln[0] === 'A' ? 'l' : 'r', en: ln[1], id: ln[2] })) }))) + '</section>';
       }
       if (b.t === 'fix') {
         return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3>' + (b.hint ? '<p class="muted" style="font-size:15px">' + esc(b.hint) + '</p>' : '') +
-          b.items.map((it) => '<div class="fix"><div class="fix-bad"><span class="fix-ico" aria-hidden="true">' + ICON.x(16) + '</span><span><span class="sr-only">Salah: </span><s>' + esc(it[0]) + '</s></span></div>' +
-            '<div class="fix-good">' + sayBtn(it[1]) + '<span><span class="sr-only">Benar: </span><b>' + esc(it[1]) + '</b></span></div>' +
-            '<p class="fix-why">' + esc(it[2]) + '</p></div>').join('') + '</section>';
+          b.items.map((it) => '<div class="fix"><div class="fix-bad"><span class="fix-ico" aria-hidden="true">' + ICON.x(16) + '</span><span><span class="sr-only">Salah: </span><s>' + rich(it[0]) + '</s></span></div>' +
+            '<div class="fix-good">' + sayBtn(plain(it[1])) + '<span><span class="sr-only">Benar: </span><b>' + rich(it[1]) + '</b></span></div>' +
+            '<p class="fix-why">' + rich(it[2]) + '</p></div>').join('') + '</section>';
       }
       if (b.t === 'chips') {
         return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3><div class="chips">' +
-          b.items.map((it) => '<button type="button" class="letter" data-act="letter" data-l="' + esc(it[0]) + '" aria-label="Huruf ' + esc(it[0]) + ', dibaca ' + esc(it[1]) + '">' + esc(it[0]) + '<small>' + esc(it[1]) + '</small></button>').join('') + '</div></section>';
+          b.items.map((it) => {
+            const ip = it[2] ? ipaOf(it[2]) : '';
+            return '<button type="button" class="letter" data-act="letter" data-l="' + esc(it[0]) + '" aria-label="Huruf ' + esc(it[0]) + ', dibaca ' + esc(it[1]) + (ip ? ', simbol bunyi ' + esc(ip) : '') + '">' + esc(it[0]) + '<small>' + esc(it[1]) + '</small>' +
+              (it[2] ? '<span class="ipa" data-ipa="' + esc(JSON.stringify(it[2])) + '">' + esc(ip) + '</span>' : '') + '</button>';
+          }).join('') + '</div>' + (b.note ? '<p class="ipa-note">' + rich(b.note) + '</p>' : '') + '</section>';
       }
       if (b.t === 'wordlist') {
         return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3><div class="words">' +
@@ -657,7 +941,7 @@
   /* ---------- halaman pelajaran ---------- */
   let P = null; // keadaan latihan yang sedang dibuka
   function resetP(id, key) {
-    P = { enter: true, id: id, key: key, exIdx: 0, status: null, picked: null, value: '', placed: [], results: [], states: {}, mq: {}, cards: {}, summary: false, complete: false };
+    P = { enter: true, id: id, key: key, exIdx: 0, status: null, picked: null, value: '', placed: [], results: [], states: {}, mq: {}, cards: {}, clock: {}, rv: {}, fs: {}, summary: false, complete: false };
   }
   function lockedView(lesson, why) {
     const title = lessonTitle(lesson);
@@ -672,9 +956,58 @@
       '<p class="notice">Hanya untuk pengujian di komputer ini: kamu bisa membuka semua pelajaran premium lewat <a href="#data" style="text-decoration:underline">Data saya</a>.</p></div></main>' + FOOT;
   }
 
+  /* soal isian beruntun: beberapa kalimat dalam satu halaman, dijawab dari atas ke bawah */
+  function fsState(i) { return P.fs[i] || (P.fs[i] = { v: [], st: [], first: [] }); }
+  function fsSync() {
+    const fs = fsState(P.exIdx);
+    document.querySelectorAll('.fs-input').forEach((inp) => { fs.v[Number(inp.getAttribute('data-i'))] = inp.value; });
+  }
+  /* soal listening: tombol putar, putar pelan, dan pilihan aksen */
+  const SLOW_RATE = 0.5;
+  function listenRow(word) {
+    const w = esc(word);
+    return '<div class="q-listen"><button type="button" class="listen-btn" data-act="spellx" data-w="' + w + '" aria-label="Putar ejaan">' + ICON.sound(22) + '<span>Putar ejaan</span></button>' +
+      '<button type="button" class="listen-btn slow" data-act="spellslow" data-w="' + w + '" aria-label="Putar ejaan lebih pelan"><span aria-hidden="true">🐢</span><span>Pelan</span></button></div>';
+  }
+  function accentToggle() {
+    const acc = accentKey();
+    return '<div class="acc-row" role="group" aria-label="Pilih aksen suara"><span class="acc-lbl">Aksen suara:</span>' +
+      Object.keys(ACCENTS).map((k) => '<button type="button" class="acc-btn" data-act="qAccent" data-v="' + k + '" aria-pressed="' + (k === acc ? 'true' : 'false') + '"><span class="acc-flag" aria-hidden="true">' + FLAG[k] + '</span>' + (k === 'us' ? 'Amerika' : 'British') + '</button>').join('') + '</div>';
+  }
+  function listenWhy(word) {
+    const L = String(word).toUpperCase().split('').filter((c) => LETTER_SOUND[c]);
+    return 'Kata <strong>' + esc(String(word).toLowerCase()) + '</strong>: ' + L.join(' - ') + ', dibaca ' + ipaSpan(word) + '.';
+  }
+  function fillsetView(lesson, src, ex) {
+    const n = lesson[src].length;
+    const fs = fsState(P.exIdx);
+    const enter = P.enter; P.enter = false;
+    const total = ex.items.length;
+    const answeredN = ex.items.filter((_, i) => fs.first[i] !== undefined).length;
+    const allDone = answeredN === total;
+    const items = ex.items.map((it, i) => {
+      const st = fs.st[i] || '';
+      const ro = st ? ' readonly' : '';
+      const whyHtml = it.spell && !it.why ? listenWhy(it.spell) : rich(it.why);
+      let tail = '';
+      if (!st) tail = '<div><button type="button" class="btn" data-act="fsCheck" data-i="' + i + '">Periksa</button></div>';
+      else if (st === 'right') tail = '<div class="feedback right" role="status"><h3>Tepat!</h3><p>' + whyHtml + '</p></div>';
+      else tail = '<div class="feedback wrong" role="status"><h3>Belum tepat.</h3><p>Jawaban yang benar: <strong>' + esc((it.before ? it.before + ' ' : '') + it.answers[0] + (it.after ? ' ' + it.after : '')) + '</strong></p><p>' + whyHtml + '</p></div>' +
+        '<div class="btn-row"><button type="button" class="btn" data-act="fsRetry" data-i="' + i + '">Ulangi kalimat ini</button></div>';
+      return '<li class="fs-item ' + st + '"><p class="fs-q"><span class="fs-n">' + (i + 1) + '</span>' + esc(it.q || 'Kata apa yang dieja?') + '</p>' + (it.spell ? listenRow(it.spell) : '') +
+        '<div class="fill"><span>' + esc(it.before || '') + '</span><input class="fs-input" type="text" data-i="' + i + '" aria-label="Jawaban kalimat nomor ' + (i + 1) + '" autocomplete="off" autocapitalize="none" spellcheck="false" value="' + esc(fs.v[i] || '') + '"' + ro + '><span>' + esc(it.after || '') + '</span></div>' + tail + '</li>';
+    }).join('');
+    const lastQ = P.exIdx === n - 1;
+    const nav = '<div class="ex-nav"><button type="button" class="btn" data-act="prevEx"' + (P.exIdx === 0 ? ' disabled' : '') + ' aria-label="Soal sebelumnya">' + ICON.back(18) + ' Kembali</button>' +
+      '<button type="button" class="btn' + (allDone ? ' btn-primary' : '') + '" data-act="nextEx" aria-label="' + (lastQ ? 'Lihat hasil' : 'Soal berikutnya') + '">' + (lastQ ? 'Lihat hasil' : 'Lanjut') + ' ' + ICON.next(18) + '</button></div>';
+    return '<section class="card card-shadow stack' + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext"><p class="q-label">Soal ' + (P.exIdx + 1) + ' dari ' + n + (ex.part ? ' · ' + esc(ex.part) : '') + '</p><p id="qtext" class="q-text">' + esc(ex.q) + '</p>' +
+      (ex.listen ? accentToggle() : '') + '<p class="fs-prog" aria-live="polite">Terjawab ' + answeredN + ' dari ' + total + (ex.listen ? ' kata' : ' kalimat') + '</p><ol class="fs-list">' + items + '</ol>' + nav + '</section>';
+  }
+
   function exView(lesson, src) {
     const exs = lesson[src];
     const ex = exs[P.exIdx];
+    if (ex.type === 'fillset') return fillsetView(lesson, src, ex);
     const n = exs.length;
     const seedBase = lesson.id + ':' + src + ':' + P.exIdx;
     let body = '';
@@ -683,14 +1016,15 @@
 
     if (ex.type === 'mc') {
       const order = shuffledIdx(ex.options.length, seedBase, false);
-      body = '<div class="opts" role="group" aria-label="Pilihan jawaban">' + order.map((oi) => {
+      const longOpt = ex.options.some((o) => String(o).length > 18);
+      body = '<div class="opts mq-opts n' + ex.options.length + (longOpt ? ' long' : '') + '" role="group" aria-label="Pilihan jawaban">' + order.map((oi, pos) => {
         let cls = 'opt'; let tag = '';
         if (answered) {
           if (oi === ex.answer) { cls += ' right'; tag = '<span class="tag">' + ICON.check(16) + 'Jawaban yang benar</span>'; }
           else if (oi === P.picked) { cls += ' wrong'; tag = '<span class="tag">' + ICON.x(16) + 'Belum tepat</span>'; }
           else cls += ' dim';
         }
-        return '<button type="button" class="' + cls + '" data-act="choose" data-i="' + oi + '"' + (answered ? ' disabled' : '') + '><span>' + esc(ex.options[oi]) + '</span>' + tag + '</button>';
+        return '<button type="button" class="' + cls + '" data-act="choose" data-i="' + oi + '"' + (answered ? ' disabled' : '') + '><span class="opt-t"><i class="opt-l" aria-hidden="true">' + String.fromCharCode(65 + pos) + '</i><span>' + esc(ex.options[oi]) + '</span></span>' + tag + '</button>';
       }).join('') + '</div>';
     } else if (ex.type === 'fill') {
       body = '<div class="fill"><span>' + esc(ex.before || '') + '</span><label class="sr-only" for="fill-input">Jawabanmu</label><input id="fill-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" value="' + esc(P.value) + '"' + (answered ? ' readonly' : '') + '><span>' + esc(ex.after || '') + '</span></div>' +
@@ -716,13 +1050,14 @@
       }
       const last = P.exIdx === n - 1;
       fb = '<div id="feedback" tabindex="-1" class="feedback ' + (right ? 'right' : 'wrong') + '" role="status"><h3>' + (right ? 'Tepat!' : 'Belum tepat.') + '</h3>' +
-        (right ? '' : '<p>Jawaban yang benar: <strong>' + esc(correctText) + '</strong></p>') + '<p>' + esc(ex.why) + '</p></div>' +
+        (right ? '' : '<p>Jawaban yang benar: <strong>' + esc(correctText) + '</strong></p>') + '<p>' + rich(ex.why) + '</p></div>' +
         (right ? '' : '<div class="btn-row"><button type="button" class="btn" data-act="retry">Ulangi soal ini</button></div>');
     }
     const lastQ = P.exIdx === n - 1;
     fb += '<div class="ex-nav"><button type="button" class="btn" data-act="prevEx"' + (P.exIdx === 0 ? ' disabled' : '') + ' aria-label="Soal sebelumnya">' + ICON.back(18) + ' Kembali</button>' +
       '<button type="button" class="btn' + (answered ? ' btn-primary' : '') + '" data-act="nextEx" aria-label="' + (lastQ ? 'Lihat hasil' : 'Soal berikutnya') + '">' + (lastQ ? 'Lihat hasil' : 'Lanjut') + ' ' + ICON.next(18) + '</button></div>';
-    return '<section class="card card-shadow stack' + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext"><p class="q-label">Soal ' + (P.exIdx + 1) + ' dari ' + n + (ex.part ? ' · ' + esc(ex.part) : '') + '</p><p id="qtext" class="q-text">' + esc(ex.q) + '</p>' + body + fb + '</section>';
+    return '<section class="card card-shadow stack' + (ex.type === 'mc' ? ' exq' : '') + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext"><p class="q-label">Soal ' + (P.exIdx + 1) + ' dari ' + n + (ex.part ? ' · ' + esc(ex.part) : '') + '</p><p id="qtext" class="q-text">' + esc(ex.q) + '</p>' +
+      (ex.spell ? accentToggle() + listenRow(ex.spell) : '') + body + fb + '</section>';
   }
 
   function summaryView(lesson, step) {
@@ -890,6 +1225,7 @@
     render({ keepScroll: true, focusFeedback: true });
   }
   function saveEx() {
+    fsSync();
     if (P.status === null) { const inp = $('#fill-input'); if (inp) P.value = inp.value; }
     P.states[P.exIdx] = { status: P.status, picked: P.picked, value: P.value, placed: P.placed.slice() };
   }
@@ -912,15 +1248,26 @@
       else { const t = document.getElementById(id); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
       return;
     }
+    if (!e.target.closest('button, a, summary, input, select, textarea, label')) {
+      const fl = e.target.closest('.ent-ex li.flip');
+      if (fl && fl.closest('#main')) { fl.classList.toggle('rev'); return; }
+    }
     if (document.body.classList.contains('hide-id') && !e.target.closest('button, a, summary, input, select, textarea, label')) {
-      const it = e.target.closest('.phr li, .ent-ex li, .ent-head, .dlg-line, .qa, tbody tr');
+      const it = e.target.closest('.phr li, .ent-ex li, .ent-head, .dlg-line, .bub, .qa, tbody tr');
       if (it && it.closest('#main') && !it.closest('.mq, .fc-stage')) { it.classList.toggle('rev'); return; }
     }
     const el = e.target.closest('[data-act]');
     if (!el) return;
     const act = el.getAttribute('data-act');
-    if (act === 'say') { speakText(el.getAttribute('data-text'), el); return; }
+    if (act === 'say') { const fl = el.closest('.ent-ex li.flip'); if (fl) fl.classList.add('rev'); speakText(el.getAttribute('data-text'), el); return; }
     if (act === 'spellx') { speakSpell(el.getAttribute('data-w'), el); return; }
+    if (act === 'spellslow') { speakSpell(el.getAttribute('data-w'), el, SLOW_RATE); return; }
+    if (act === 'qAccent') {
+      DB.accent = el.getAttribute('data-v') === 'gb' ? 'gb' : 'us'; save();
+      if (P) fsSync();
+      render({ keepScroll: true });
+      return;
+    }
     if (act === 'sayx') { speakText(el.getAttribute('data-text'), el); return; }
     if (act === 'toggleHide') {
       DB.hideId = !DB.hideId; save();
@@ -935,16 +1282,19 @@
       P.mq[k][qi] = oi; sfx(oi === 0); refreshMq(k); return;
     }
     if (act === 'mqReset') { const k = el.getAttribute('data-k'); if (P) P.mq[k] = {}; refreshMq(k); return; }
+    if (/^rv(Toggle|All)$/.test(act)) { if (P) revealAct(act, el.getAttribute('data-k'), el.getAttribute('data-v'), Number(el.getAttribute('data-i'))); return; }
+    if (/^clk(New|Step|StepSet|Fmt|Face|Tebak|Reveal|Full)$/.test(act)) { if (P) clockAct(act, el.getAttribute('data-k'), el.getAttribute('data-v')); return; }
     if (/^fc(Mode|Flip|Prev|Next|Dir|Shuffle|Only|Reset|Know)$/.test(act)) { if (P) cardAct(act, el.getAttribute('data-k'), el.getAttribute('data-v')); return; }
-    if (act === 'letter') { const L = el.getAttribute('data-l'); speakRaw(letterSound(L) || L, el); return; }
-    if (act === 'setAccent') { DB.accent = el.getAttribute('data-v') === 'gb' ? 'gb' : 'us'; save(); refreshAudioUI(); speakRaw(SAMPLE, null); return; }
-    if (act === 'setSpeed') { DB.speed = SPEEDS[el.getAttribute('data-v')] ? el.getAttribute('data-v') : 'slow'; save(); refreshAudioUI(); speakRaw(SAMPLE, null); return; }
+    if (act === 'letter') { const L = el.getAttribute('data-l'); speakClip('letter-' + L.toLowerCase(), letterSound(L) || L, el); return; }
+    if (act === 'setAccent') { DB.accent = el.getAttribute('data-v') === 'gb' ? 'gb' : 'us'; save(); refreshAudioUI(); applyIpa(); speakText(SAMPLE, null); return; }
+    if (act === 'setSpeaker') { DB['speaker_' + accentKey()] = el.getAttribute('data-v'); save(); refreshAudioUI(); speakText(SAMPLE, null); return; }
+    if (act === 'setSpeed') { DB.speed = SPEEDS[el.getAttribute('data-v')] ? el.getAttribute('data-v') : 'slow'; save(); refreshAudioUI(); speakText(SAMPLE, null); return; }
     if (act === 'nextVoice') {
       const acc = accentKey(); const list = voicesFor(acc);
       if (list.length > 1) { const i = Math.max(0, list.indexOf(chosenVoice(acc))); DB['voice_' + acc] = list[(i + 1) % list.length].name; save(); refreshAudioUI(); }
-      speakRaw(SAMPLE, null); return;
+      speakText(SAMPLE, null); return;
     }
-    if (act === 'testVoice') { speakRaw(SAMPLE, null); return; }
+    if (act === 'testVoice') { speakText(SAMPLE, null); return; }
     if (act === 'spell') { speakSpell(el.getAttribute('data-w'), el); return; }
     if (act === 'demo') { demoPick = Number(el.getAttribute('data-i')); render({ keepScroll: true }); return; }
     if (act === 'toggleSound') { DB.sound = !soundOn(); save(); if (soundOn()) sfx(true); render({ keepScroll: true }); toast(soundOn() ? 'Efek suara jawaban hidup.' : 'Efek suara jawaban mati.'); return; }
@@ -979,6 +1329,28 @@
 
     const cx = currentLessonStep();
     const ex = cx.exs[P.exIdx];
+    if (act === 'fsCheck') {
+      const i = Number(el.getAttribute('data-i'));
+      const fs = fsState(P.exIdx);
+      fsSync();
+      if (!norm(fs.v[i] || '')) { toast('Isi jawabanmu dulu.'); const inp = document.querySelector('.fs-input[data-i="' + i + '"]'); if (inp) inp.focus(); return; }
+      const it = ex.items[i];
+      const ok = it.answers.some((a) => norm(a) === norm(fs.v[i]));
+      fs.st[i] = ok ? 'right' : 'wrong';
+      if (fs.first[i] === undefined) fs.first[i] = ok;
+      if (ex.items.every((_, k) => fs.first[k] !== undefined) && P.results[P.exIdx] === undefined) P.results[P.exIdx] = ex.items.filter((_, k) => fs.first[k]).length / ex.items.length >= (ex.pass || 1);
+      sfx(ok);
+      render({ keepScroll: true });
+      return;
+    }
+    if (act === 'fsRetry') {
+      const i = Number(el.getAttribute('data-i'));
+      const fs = fsState(P.exIdx);
+      fsSync(); fs.st[i] = ''; fs.v[i] = '';
+      render({ keepScroll: true });
+      const inp = document.querySelector('.fs-input[data-i="' + i + '"]'); if (inp) inp.focus();
+      return;
+    }
     if (act === 'choose') {
       if (P.status) return;
       const i = Number(el.getAttribute('data-i'));
@@ -1010,7 +1382,7 @@
       saveEx(); P.summary = true; render();
       return;
     }
-    if (act === 'redo') { P.enter = true; P.exIdx = 0; P.status = null; P.picked = null; P.value = ''; P.placed = []; P.results = []; P.states = {}; P.summary = false; render(); return; }
+    if (act === 'redo') { P.enter = true; P.exIdx = 0; P.status = null; P.picked = null; P.value = ''; P.placed = []; P.results = []; P.states = {}; P.fs = {}; P.summary = false; render(); return; }
     if (act === 'finishEx') {
       const right = P.results.filter(Boolean).length;
       const p = prog(cx.lesson.id);
@@ -1025,6 +1397,8 @@
   });
 
   document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && document.body.classList.contains('clk-lock') && P) { Object.keys(P.clock).forEach((k) => { if (P.clock[k].full) { P.clock[k].full = false; refreshClock(k); } }); document.body.classList.remove('clk-lock'); }
+    if (e.key === 'Enter' && e.target && e.target.classList && e.target.classList.contains('fs-input')) { e.preventDefault(); const b = e.target.closest('.fs-item').querySelector('[data-act="fsCheck"]'); if (b) b.click(); return; }
     if (e.key === 'Enter' && e.target && e.target.id === 'fill-input') { e.preventDefault(); const b = document.querySelector('[data-act="check"]'); if (b) b.click(); }
   });
 
@@ -1039,7 +1413,7 @@
     if (!t || !t.getAttribute) return;
     const bind = t.getAttribute('data-bind');
     if (bind === 'apply-check' && P) { prog(P.id).apply.checks[Number(t.getAttribute('data-i'))] = t.checked; save(); }
-    else if (bind === 'voice') { DB['voice_' + accentKey()] = t.value; save(); refreshAudioUI(); speakRaw(SAMPLE, null); }
+    else if (bind === 'voice') { DB['voice_' + accentKey()] = t.value; save(); refreshAudioUI(); speakText(SAMPLE, null); }
     else if (bind === 'test-mode') { DB.testMode = t.checked; save(); toast(t.checked ? 'Mode uji aktif: pelajaran premium terbuka.' : 'Mode uji dimatikan.'); }
     else if (bind === 'import' && t.files && t.files[0]) {
       const fr = new FileReader();
