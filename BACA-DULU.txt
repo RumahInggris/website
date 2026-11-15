@@ -1,0 +1,34 @@
+YANG PENTING INGGRIS - PROTOTIPE LOKAL
+======================================
+
+CARA MEMBUKA
+1. Ekstrak (unzip) file zip ini. Klik kanan > "Extract All" di Windows.
+2. Buka folder hasil ekstrak, lalu klik dua kali file  index.html
+3. Website terbuka di browser (disarankan Chrome atau Edge).
+   Tidak perlu instal apa pun dan tidak perlu internet
+   (internet hanya dipakai untuk font; tanpa internet font tetap tampil, hanya bentuknya sedikit berbeda).
+
+PENTING: JANGAN buka index.html langsung dari dalam file zip. Ekstrak dulu.
+
+DI MANA DATA TERSIMPAN
+- Akun dan kemajuan belajar tersimpan di browser komputer ini (localStorage).
+- Data tidak dikirim ke mana pun.
+- Browser berbeda (Chrome vs Edge) atau mode Incognito = data berbeda / tidak tersimpan.
+- Kalau riwayat browser dibersihkan, data bisa hilang.
+  Buka menu "Data saya" > "Unduh cadangan" secara berkala.
+  Untuk memulihkan: "Data saya" > "Pulihkan dari cadangan".
+
+YANG BISA DICOBA
+- Beranda (landing page) dengan daftar 6 pelajaran course "Speaking Dasar".
+- Pelajaran 1 bisa dibuka tanpa akun. Pelajaran 2 dan 3 butuh akun gratis.
+- Pelajaran 4, 5, 6 premium (terkunci). Untuk mencobanya:
+  masuk > "Data saya" > nyalakan "Mode uji". Ini HANYA untuk pengujian, bukan pembayaran.
+- Tiap pelajaran: Pelajari > Pahami > Latihan > Praktikkan > Ulas.
+- Tombol speaker memakai suara bawaan browser (hasil bisa berbeda di tiap komputer). Aksen (Amerika/British), kecepatan, dan pilihan suara bisa diatur lewat tombol ikon di halaman pelajaran.
+- Fitur belajar: tombol "Sembunyikan arti" (tekan baris untuk mengintip), kartu hafalan di daftar kata panjang (pelajaran 5 dan 6), dan kuis mini di tiap kelompok materi.
+
+BATASAN VERSI INI
+- Akun belum memakai kata sandi (hanya untuk uji lokal).
+- Harga dan durasi akses masih tertulis [HARGA] dan [DURASI AKSES] karena belum diputuskan.
+- Belum ada pembayaran, belum ada panel admin. Itu tahap berikutnya.
+- Gambar peta untuk pelajaran "Giving Direction" belum dimasukkan.

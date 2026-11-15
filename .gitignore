@@ -1,0 +1,13 @@
+# Rahasia: jangan pernah diunggah ke GitHub
+.env
+.env.*
+*.key
+*.pem
+secrets/
+
+# Berkas sistem dan editor
+.DS_Store
+Thumbs.db
+node_modules/
+.vscode/
+.idea/
