@@ -515,12 +515,12 @@ window.COURSE = {
             rows: [["Rumus", "{{a.m.}} = tengah malam sampai tengah hari  |  {{p.m.}} = tengah hari sampai tengah malam"], ["Penjelasan", "Singkatan ini ditaruh ==setelah angka jam== supaya jelas itu pagi atau malam. Biasanya dipakai dalam gaya **American**."]],
             ex: [["I wake up at 6 {{a.m.}}", "Saya bangun pukul 6 pagi.", "06.00"], ["The movie starts at 7 {{p.m.}}", "Filmnya mulai pukul 7 malam.", "19.00"]] }
         ]},
-        { t: "fix", title: "Kesalahan yang sering terjadi", hint: "Kesalahan terbesar biasanya urutan kata dan pilihan past atau to. Periksa dua hal itu dulu.", items: [
-          ["It's two past ten.", "It's ten past two.", "Untuk pukul 02.10: sebut **menit dulu**, lalu **jam**. Hasilnya ==ten past two==."],
-          ["It's five to one.", "It's five to two.", "Untuk pukul 01.55: sisa 5 menit menuju jam **dua**, bukan jam satu. Setelah {{c|to}} sebut ==jam berikutnya==."],
-          ["It's thirty-five past five.", "It's twenty-five to six.", "Untuk pukul 05.35: menit di atas 30 memakai {{c|to}}. Sisa ==60 − 35 = 25== menit menuju jam enam."],
-          ["It's seven seven.", "It's seven oh seven.", "Untuk pukul 07.07: menit di bawah 10 dibaca dengan {{oh}} di depannya."],
-          ["It's six and fifteen.", "It's six fifteen.", "Untuk pukul 06.15 dalam gaya American, jam dan menit disebut langsung ==tanpa and==."]
+        { t: "fix", side: true, title: "Kesalahan yang sering terjadi", hint: "Kesalahan terbesar biasanya urutan kata dan pilihan past atau to. Periksa dua hal itu dulu.", items: [
+          ["It's two past ten.", "It's ten past two.", "Untuk pukul 02.10: sebut **menit dulu**, lalu **jam**. Hasilnya ==ten past two==.", "02.10"],
+          ["It's five to one.", "It's five to two.", "Untuk pukul 01.55: sisa 5 menit menuju jam **dua**, bukan jam satu. Setelah {{c|to}} sebut ==jam berikutnya==.", "01.55"],
+          ["It's thirty-five past five.", "It's twenty-five to six.", "Untuk pukul 05.35: menit di atas 30 memakai {{c|to}}. Sisa ==60 − 35 = 25== menit menuju jam enam.", "05.35"],
+          ["It's seven seven.", "It's seven oh seven.", "Untuk pukul 07.07: menit di bawah 10 dibaca dengan {{oh}} di depannya.", "07.07"],
+          ["It's six and fifteen.", "It's six fifteen.", "Untuk pukul 06.15 dalam gaya American, jam dan menit disebut langsung ==tanpa and==.", "06.15"]
         ]},
         { t: "dialogs", title: "Contoh percakapan tentang jam", items: [
           { title: "1. Bertanya jam kepada orang asing (British)", lines: [
@@ -543,7 +543,7 @@ window.COURSE = {
             ["B", "Don't worry. We still have ten minutes.", "Tenang. Kita masih punya sepuluh menit."]
           ]}
         ]},
-        { t: "table", title: "Cek cepat: dua gaya berdampingan", head: ["Jam", "British", "American"], say: [1, 2], rows: [
+        { t: "table", flags: { 1: "gb", 2: "us" }, title: "Cek cepat: dua gaya berdampingan", head: ["Jam", "British", "American"], say: [1, 2], rows: [
           ["02.10", "Ten past two", "Two ten"],
           ["03.15", "A quarter past three", "Three fifteen"],
           ["06.30", "Half past six", "Six thirty"],
@@ -551,7 +551,17 @@ window.COURSE = {
           ["01.55", "Five to two", "One fifty-five"],
           ["07.07", "Seven minutes past seven", "Seven oh seven"]
         ]},
-        { t: "note", html: "<strong>Ingat tiga hal:</strong> (1) British = <mark class='hl'>menit lalu jam</mark>, American = <mark class='hl'>jam lalu menit</mark>. (2) Menit 01–30 pakai <span class='kw g'>past</span>, menit 31–59 pakai <span class='kw c'>to</span>. (3) Untuk <span class='kw c'>to</span>, hitung <mark class='hl'>60 dikurangi menit</mark> dan sebut jam berikutnya." }
+        { t: "duonote", title: "Ingat perbedaannya", cols: [
+          { flag: "gb", tone: "br", label: "British", sub: "menit lalu jam", points: [
+            "Sebut ==menit dulu==, lalu **jam**: ten past two.",
+            "Menit 01–30 pakai {{g|past}}.",
+            "Menit 31–59 pakai {{c|to}}.",
+            "Untuk {{c|to}}, hitung ==60 dikurangi menit== dan sebut jam berikutnya."] },
+          { flag: "us", tone: "am", label: "American", sub: "jam lalu menit", points: [
+            "Sebut ==jam dulu==, lalu **menit**, seperti angka digital: two ten.",
+            "Menit di bawah 10 pakai {{c|oh}}: seven oh seven.",
+            "Tanpa kata and: six fifteen."] }
+        ] },
       ],
       practice: [
         { type: "mc", part: "Bertanya jam", q: "Kamu perlu tahu jam berapa sekarang dan bertanya kepada orang asing. Kalimat yang paling sopan?", options: ["Excuse me, could you tell me the time, please?", "You what time is it now?", "Time what you have?", "Tell time me now."], answer: 0,

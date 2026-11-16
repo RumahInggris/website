@@ -24,3 +24,13 @@ Buka `index.html` di browser. Tidak perlu instalasi.
 ## Catatan keamanan
 
 Jangan menaruh kunci rahasia (API key, kunci Midtrans/Supabase) di kode. Simpan hanya di environment variable pada layanan hosting. Berkas `.env` sudah diabaikan oleh `.gitignore`.
+
+## Menerbitkan lewat GitHub Pages (gratis)
+
+Situs ini hanya berkas statis, jadi bisa langsung diterbitkan lewat GitHub Pages. Di GitHub gratis, Pages hanya tersedia untuk repositori publik.
+
+1. Repositori > Settings > General > paling bawah "Danger Zone" > Change visibility > Make public.
+2. Repositori > Settings > Pages > Source: "Deploy from a branch" > Branch: `main`, folder `/ (root)` > Save.
+3. Tunggu 1 sampai 2 menit. Alamatnya: `https://rumahinggris.github.io/website/`
+
+Selama masih prototipe, halaman memakai `noindex` supaya tidak muncul di Google. Hapus baris `<meta name="robots" ...>` di `index.html` saat siap diumumkan.

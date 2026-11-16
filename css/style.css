@@ -735,3 +735,61 @@ strong.k { font-weight: 800; color: var(--navy); }
 @media (min-width: 560px) { .spk-lbl { width: auto; } }
 .spk-btn { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 2px solid var(--navy); background: #fff; font-weight: 700; font-size: 14px; color: var(--navy); cursor: pointer; }
 .spk-btn[aria-pressed="true"] { background: var(--navy); color: #fff; }
+
+/* kesalahan umum: jam di atas, salah (kiri) dan benar (kanan) berdampingan, penjelasan di bawah */
+.fix-side .fix-time { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 8px 0 2px; }
+.fix-side .fix-time .rv-clock { width: 72px; height: 72px; flex: none; }
+.fix-digital { font-family: var(--font-head); font-weight: 800; font-size: 34px; letter-spacing: 1px; color: var(--navy); line-height: 1; }
+.fix-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: stretch; }
+.fix-side .fix-bad, .fix-side .fix-good { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px; padding: 10px 12px; }
+.fix-tag { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; min-height: 34px; }
+.fix-side .fix-bad .fix-tag { justify-content: flex-start; color: #A32708; }
+.fix-side .fix-good .fix-tag { color: #0E6B4B; }
+.fix-side .fix-ico { width: 24px; height: 24px; }
+.fix-side .fix-bad s { font-size: 17px; line-height: 1.3; }
+.fix-side .fix-good b { font-size: 17px; line-height: 1.3; }
+.fix-side .fix-good .say { width: 38px; height: 38px; }
+.fix-side .fix-why { padding: 2px 4px 0; }
+@media (max-width: 380px) { .fix-side .fix-bad s, .fix-side .fix-good b { font-size: 16px; } }
+
+/* tabel dua gaya: bendera di kepala kolom, sejajar dengan tombol suara dan teks */
+.duo { border: 2px solid var(--navy); border-radius: 14px; overflow: hidden; background: #fff; }
+.duo-head, .duo-row { display: grid; grid-template-columns: 58px 1fr 1fr; column-gap: 10px; align-items: center; padding: 10px 14px; }
+.duo-head { background: var(--lav); font-family: var(--font-head); font-weight: 600; font-size: 14px; }
+.duo-row { border-top: 1px solid #D9D6EA; font-size: 16px; }
+.duo-time { font-weight: 600; }
+.duo-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.duo-cell .say.inline { margin-right: 0; flex: none; }
+.duo-cell > span { overflow-wrap: anywhere; line-height: 1.3; }
+.thflag { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.thflag i { flex: none; width: 36px; display: flex; justify-content: center; }
+.thflag svg { width: 26px; height: 18px; display: block; }
+.thflag b { font-weight: 700; }
+@media (max-width: 560px) {
+  .duo-head, .duo-row { grid-template-columns: 50px 1fr 1fr; column-gap: 8px; padding: 10px 10px; }
+  .duo-cell { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .thflag { gap: 6px; }
+  .thflag i { width: auto; }
+  .duo-row { font-size: 15px; }
+}
+/* catatan dua kolom British dan American */
+.duo-note { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.duo-col { border: 2px solid var(--navy); border-radius: 16px; padding: 12px; background: var(--lav-light); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.duo-col.am { background: #FFF3D1; }
+.duo-col-head { display: flex; align-items: center; gap: 10px; }
+.duo-col-head i { flex: none; }
+.duo-col-head svg { width: 30px; height: 21px; display: block; }
+.duo-col-head span { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.duo-col-head b { font-family: var(--font-head); font-size: 17px; }
+.duo-col-head small { font-size: 13px; font-weight: 700; color: var(--muted); }
+.duo-col ul { margin: 0; padding: 0 0 0 18px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.45; }
+.duo-col li { overflow-wrap: anywhere; }
+@media (max-width: 400px) { .duo-col { padding: 10px; } .duo-col ul { font-size: 14px; padding-left: 16px; } }
+
+/* animasi arah di kartu hafalan */
+.fc-card.has-anim { padding-top: 48px; }
+.fc-anim { display: block; width: 100%; max-width: 250px; }
+.fc-anim svg { display: block; width: 100%; height: auto; border: 2px solid var(--navy); border-radius: 14px; background: var(--lav-light); }
+@keyframes mv-brake { 0%, 50% { opacity: .3; } 56%, 95% { opacity: 1; } 100% { opacity: .3; } }
+.mv-brake { animation: mv-brake 4s linear infinite; opacity: .3; }
+@media (prefers-reduced-motion: reduce) { .mv, .mv-brake { animation: none !important; } }

@@ -585,6 +585,69 @@
     const base = st.order && st.order.length === n ? st.order : Array.from({ length: n }, (_, i) => i);
     return st.only ? base.filter((i) => kn.indexOf(i) < 0) : base;
   }
+  /* animasi kecil (tampak dari atas) untuk kata arah di kartu hafalan: mobil atau orang bergerak */
+  const MV = { navy: '#1F2340', acc: '#4B3FE0', road: '#CFD3E6', route: '#FF6B4A', sun: '#FFC93C', mint: '#DDF6EF' };
+  function mvCar(brake) {
+    const bl = brake ? ' class="mv-brake" style="animation-duration:' + brake + 's"' : '';
+    return '<rect x="-16" y="-9" width="32" height="18" rx="6" fill="' + MV.acc + '" stroke="' + MV.navy + '" stroke-width="2"/>' +
+      '<rect x="-8" y="-6" width="10" height="12" rx="2" fill="#3A30C4"/>' +
+      '<rect x="2" y="-6" width="7" height="12" rx="2" fill="' + MV.mint + '" stroke="' + MV.navy + '" stroke-width="1"/>' +
+      '<rect x="13" y="-7.5" width="3.5" height="4.5" rx="1" fill="' + MV.sun + '"/><rect x="13" y="3" width="3.5" height="4.5" rx="1" fill="' + MV.sun + '"/>' +
+      '<rect x="-17" y="-7.5" width="3.5" height="4.5" rx="1" fill="#FF3B30"' + (brake ? bl : ' opacity=".55"') + '/><rect x="-17" y="3" width="3.5" height="4.5" rx="1" fill="#FF3B30"' + (brake ? bl : ' opacity=".55"') + '/>';
+  }
+  function mvPerson() {
+    return '<ellipse cx="0" cy="0" rx="4.5" ry="9" fill="' + MV.route + '" stroke="' + MV.navy + '" stroke-width="2"/><circle cx="1" cy="0" r="4.6" fill="#FFD9BF" stroke="' + MV.navy + '" stroke-width="2"/>';
+  }
+  /* gerak mengikuti jalur: keyframes CSS dihitung dari bentuk jalur (posisi + arah hadap), berhenti sebentar di ujung supaya ulangan tidak meloncat */
+  const MV_KF = {};
+  function mvKeyframes(name, d, move) {
+    if (MV_KF[name]) return;
+    let holder = document.getElementById('mv-hold');
+    if (!holder) { holder = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); holder.id = 'mv-hold'; holder.setAttribute('width', '0'); holder.setAttribute('height', '0'); holder.setAttribute('aria-hidden', 'true'); holder.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden'; document.body.appendChild(holder); }
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.setAttribute('d', d); holder.appendChild(path);
+    const L = path.getTotalLength(), N = 32, pts = [];
+    for (let i = 0; i <= N; i++) { const q = path.getPointAtLength(L * i / N); pts.push([q.x, q.y]); }
+    holder.removeChild(path);
+    let prev = null; const fr = [];
+    for (let i = 0; i <= N; i++) {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(N, i + 1)];
+      let ang = Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
+      if (prev !== null) { while (ang - prev > 180) ang -= 360; while (ang - prev < -180) ang += 360; }
+      prev = ang;
+      fr.push(((i / N) * move * 100).toFixed(2) + '%{transform:translate(' + pts[i][0].toFixed(1) + 'px,' + pts[i][1].toFixed(1) + 'px) rotate(' + ang.toFixed(1) + 'deg)}');
+    }
+    const last = fr[fr.length - 1].replace(/^[\d.]+%/, '100%');
+    let st = document.getElementById('mv-kf');
+    if (!st) { st = document.createElement('style'); st.id = 'mv-kf'; document.head.appendChild(st); }
+    st.appendChild(document.createTextNode('@keyframes mv-' + name + '{' + fr.join('') + last + '}'));
+    MV_KF[name] = true;
+  }
+  function mvMover(inner, path, still, dur, move, name) {
+    move = move || 0.78;
+    mvKeyframes(name, path, move);
+    return '<g class="mv" style="transform:translate(' + still[0] + 'px,' + still[1] + 'px) rotate(' + still[2] + 'deg);animation:mv-' + name + ' ' + dur + 's linear infinite">' + inner + '</g>';
+  }
+  function mvRoute(d, head) {
+    return '<path d="' + d + '" fill="none" stroke="' + MV.route + '" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round"/><polygon points="' + head + '" fill="' + MV.route + '"/>';
+  }
+  function mvOct(cx, cy, r) {
+    const pts = []; for (let i = 0; i < 8; i++) { const a = (22.5 + 45 * i) * Math.PI / 180; pts.push((cx + r * Math.cos(a)).toFixed(1) + ',' + (cy + r * Math.sin(a)).toFixed(1)); }
+    return '<line x1="' + cx + '" y1="' + (cy + r) + '" x2="' + cx + '" y2="' + (cy + r + 16) + '" stroke="' + MV.navy + '" stroke-width="3"/><polygon points="' + pts.join(' ') + '" fill="#E5322D" stroke="' + MV.navy + '" stroke-width="2"/><text x="' + cx + '" y="' + (cy + 3.2) + '" text-anchor="middle" font-size="8.5" font-weight="800" fill="#fff" font-family="Poppins,Arial,sans-serif">STOP</text>';
+  }
+  const MV_SCENES = {
+    'turn right': () => '<path d="M100 30h40v110h-40z M100 30h140v40H100z" fill="' + MV.road + '"/>' + mvRoute('M120 132V82Q120 50 152 50H208', '206,41 224,50 206,59') + mvMover(mvCar(), 'M120 160V82Q120 50 152 50H262', [120, 96, -90], 4.2, 0, 'right'),
+    'turn left': () => '<g transform="translate(240 0) scale(-1 1)"><path d="M100 30h40v110h-40z M100 30h140v40H100z" fill="' + MV.road + '"/>' + mvRoute('M120 132V82Q120 50 152 50H208', '206,41 224,50 206,59') + mvMover(mvCar(), 'M120 160V82Q120 50 152 50H262', [120, 96, -90], 4.2, 0, 'right') + '</g>',
+    'turn back': () => '<path d="M90 140V44a30 30 0 0 1 60 0V140z" fill="' + MV.road + '"/><path d="M120 76V140" stroke="#fff" stroke-width="2.5" stroke-dasharray="7 7"/>' + mvRoute('M105 132V62a15 15 0 0 1 30 0V110', '126,106 135,124 144,106') + mvMover(mvCar(), 'M105 165V62a15 15 0 0 1 30 0V165', [105, 100, -90], 4.6, 0, 'back'),
+    'go straight': () => '<path d="M100 0h40v140h-40z M0 50h240v40H0z" fill="' + MV.road + '"/>' + mvRoute('M120 128V28', '111,30 120,10 129,30') + mvMover(mvCar(), 'M120 165V-25', [120, 108, -90], 3.6, 0, 'straight'),
+    'stop': () => '<path d="M100 0h40v140h-40z" fill="' + MV.road + '"/><rect x="100" y="62" width="40" height="5" fill="#fff"/>' + mvOct(168, 44, 14) + mvMover(mvCar(4), 'M120 165V92', [120, 92, -90], 4, 0.5, 'stop'),
+    'pass': () => '<path d="M100 0h40v140h-40z" fill="' + MV.road + '"/><rect x="156" y="46" width="52" height="44" rx="6" fill="' + MV.sun + '" stroke="' + MV.navy + '" stroke-width="2"/><rect x="176" y="66" width="12" height="24" fill="#fff" stroke="' + MV.navy + '" stroke-width="2"/><rect x="162" y="54" width="10" height="8" fill="' + MV.mint + '" stroke="' + MV.navy + '" stroke-width="1.5"/><rect x="192" y="54" width="10" height="8" fill="' + MV.mint + '" stroke="' + MV.navy + '" stroke-width="1.5"/>' + mvRoute('M120 128V28', '111,30 120,10 129,30') + mvMover(mvCar(), 'M120 165V-25', [120, 108, -90], 3.8, 0, 'pass'),
+    'cross': () => '<path d="M0 40h240v60H0z" fill="' + MV.road + '"/>' + [0, 1, 2, 3, 4, 5, 6].map((i) => '<rect x="98" y="' + (44 + i * 8.6) + '" width="44" height="4.6" fill="#fff"/>').join('') +
+      '<g transform="translate(46 80)">' + mvCar() + '</g>' + mvRoute('M120 14V112', '111,108 120,128 129,108') + mvMover(mvPerson(), 'M120 -12V152', [120, 70, 90], 4.4, 0, 'cross')
+  };
+  function moveScene(en) {
+    const f = MV_SCENES[String(en || '').trim().toLowerCase()];
+    return f ? '<span class="fc-anim" aria-hidden="true"><svg viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" focusable="false">' + f() + '</svg></span>' : '';
+  }
   function cardsHTML(b, key, st) {
     const n = b.rows.length;
     const kn = knownSet(key);
@@ -605,14 +668,28 @@
     const shown = st.flip ? back : front;
     const showsEn = st.rev ? st.flip : !st.flip;
     const isKnown = kn.indexOf(idx) >= 0;
-    const card = '<div class="fc-stage"><button type="button" class="fc-card' + (st.flip ? ' flip' : '') + (isKnown ? ' known' : '') + '" data-act="fcFlip" data-k="' + k + '" aria-label="Kartu: ' + esc(shown) + '. Tekan untuk membalik.">' +
-      '<small class="fc-cap">' + (showsEn ? 'English' : 'Artinya') + '</small><span class="fc-word">' + esc(shown) + '</span><small class="fc-hint">' + (st.flip ? (showsEn ? 'Ucapkan kata ini dengan keras' : 'Cocokkan dengan tebakanmu') : 'Tebak dulu, lalu tekan kartu untuk melihat jawabannya') + '</small></button>' +
+    const card = '<div class="fc-stage"><button type="button" class="fc-card' + (st.flip ? ' flip' : '') + (isKnown ? ' known' : '') + (MV_SCENES[String(row[0]).trim().toLowerCase()] ? ' has-anim' : '') + '" data-act="fcFlip" data-k="' + k + '" aria-label="Kartu: ' + esc(shown) + '. Tekan untuk membalik.">' +
+      moveScene(row[0]) + '<small class="fc-cap">' + (showsEn ? 'English' : 'Artinya') + '</small><span class="fc-word">' + esc(shown) + '</span><small class="fc-hint">' + (st.flip ? (showsEn ? 'Ucapkan kata ini dengan keras' : 'Cocokkan dengan tebakanmu') : 'Tebak dulu, lalu tekan kartu untuk melihat jawabannya') + '</small></button>' +
       '<span class="fc-say">' + sayX(row[0]) + '</span>' + (isKnown ? '<span class="fc-known">' + ICON.check(14) + ' hafal</span>' : '') + '</div>';
     const nav = '<div class="fc-nav"><button type="button" class="btn" data-act="fcPrev" data-k="' + k + '" aria-label="Kartu sebelumnya">' + ICON.back(18) + '</button><span class="fc-pos">Kartu ' + (st.i + 1) + ' dari ' + d.length + '</span><button type="button" class="btn" data-act="fcNext" data-k="' + k + '" aria-label="Kartu berikutnya">' + ICON.next(18) + '</button></div>';
     const judge = st.flip
       ? '<div class="fc-judge"><button type="button" class="btn" data-act="fcKnow" data-k="' + k + '" data-v="0">Belum hafal</button><button type="button" class="btn btn-primary" data-act="fcKnow" data-k="' + k + '" data-v="1">Sudah hafal</button></div>'
       : '<div class="fc-judge"><button type="button" class="btn btn-primary" data-act="fcFlip" data-k="' + k + '">Balik kartu</button></div>';
     return head + card + nav + judge;
+  }
+  /* tabel dua gaya (British dan American) dengan bendera di kepala kolom, sejajar dengan isi */
+  function duoTable(b) {
+    const say = b.say || [];
+    const head = b.head.map((h, i) => b.flags[i] ? '<span class="thflag"><i>' + FLAG[b.flags[i]] + '</i><b>' + esc(h) + '</b></span>' : '<span>' + esc(h) + '</span>').join('');
+    const rows = b.rows.map((r) => '<div class="duo-row">' + r.map((c, i) => say.indexOf(i) >= 0
+      ? '<div class="duo-cell">' + sayBtn(plain(c), 'inline') + '<span>' + rich(c) + '</span></div>'
+      : '<div class="duo-time">' + rich(c) + '</div>').join('') + '</div>').join('');
+    return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3><div class="duo" role="table"><div class="duo-head" role="row">' + head + '</div>' + rows + '</div></section>';
+  }
+  function duoNote(b) {
+    return '<section class="card stack duo-note-wrap">' + (b.title ? '<h3 style="font-size:20px">' + esc(b.title) + '</h3>' : '') + '<div class="duo-note">' +
+      b.cols.map((c) => '<div class="duo-col ' + esc(c.tone || '') + '"><div class="duo-col-head"><i>' + FLAG[c.flag] + '</i><span><b>' + esc(c.label) + '</b><small>' + rich(c.sub) + '</small></span></div><ul>' +
+        c.points.map((p) => '<li>' + rich(p) + '</li>').join('') + '</ul></div>').join('') + '</div></section>';
   }
   function tableSection(b, key) {
     const say = b.say || [];
@@ -876,6 +953,8 @@
         return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3><ul class="phr">' +
           b.items.map((it) => '<li>' + sayBtn(it[0]) + '<div><span class="en">' + esc(it[0]) + '</span><span class="id">' + esc(it[1]) + '</span></div></li>').join('') + '</ul></section>';
       }
+      if (b.t === 'table' && b.flags) return duoTable(b);
+      if (b.t === 'duonote') return duoNote(b);
       if (b.t === 'table') return tableSection(b, bkey);
       if (b.t === 'miniquiz') return mqHTML(bkey, b);
       if (b.t === 'explain') return explainHTML(b);
@@ -917,10 +996,22 @@
           chatScenes(b.items.map((d) => ({ title: d.title, msgs: d.lines.map((ln) => ({ who: NM[ln[0]] || ln[0], side: ln[0] === 'A' ? 'l' : 'r', en: ln[1], id: ln[2] })) }))) + '</section>';
       }
       if (b.t === 'fix') {
+        const side = !!b.side;
         return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3>' + (b.hint ? '<p class="muted" style="font-size:15px">' + esc(b.hint) + '</p>' : '') +
-          b.items.map((it) => '<div class="fix"><div class="fix-bad"><span class="fix-ico" aria-hidden="true">' + ICON.x(16) + '</span><span><span class="sr-only">Salah: </span><s>' + rich(it[0]) + '</s></span></div>' +
-            '<div class="fix-good">' + sayBtn(plain(it[1])) + '<span><span class="sr-only">Benar: </span><b>' + rich(it[1]) + '</b></span></div>' +
-            '<p class="fix-why">' + rich(it[2]) + '</p></div>').join('') + '</section>';
+          b.items.map((it) => {
+            if (!side) {
+              return '<div class="fix"><div class="fix-bad"><span class="fix-ico" aria-hidden="true">' + ICON.x(16) + '</span><span><span class="sr-only">Salah: </span><s>' + rich(it[0]) + '</s></span></div>' +
+                '<div class="fix-good">' + sayBtn(plain(it[1])) + '<span><span class="sr-only">Benar: </span><b>' + rich(it[1]) + '</b></span></div>' +
+                '<p class="fix-why">' + rich(it[2]) + '</p></div>';
+            }
+            const tm = /^(\d{1,2})[.:](\d{2})$/.exec(it[3] || '');
+            return '<div class="fix fix-side">' +
+              (tm ? '<div class="fix-time" aria-label="Pukul ' + esc(it[3]) + '">' + miniClock(Number(tm[1]), Number(tm[2])) + '<b class="fix-digital">' + esc(it[3]) + '</b></div>' : '') +
+              '<div class="fix-pair">' +
+              '<div class="fix-bad"><div class="fix-tag"><span class="fix-ico" aria-hidden="true">' + ICON.x(14) + '</span><span>Salah</span></div><s>' + rich(it[0]) + '</s></div>' +
+              '<div class="fix-good"><div class="fix-tag"><span>Benar</span>' + sayBtn(plain(it[1])) + '</div><b>' + rich(it[1]) + '</b></div></div>' +
+              '<p class="fix-why">' + rich(it[2]) + '</p></div>';
+          }).join('') + '</section>';
       }
       if (b.t === 'chips') {
         return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3><div class="chips">' +
