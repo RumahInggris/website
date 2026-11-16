@@ -182,7 +182,15 @@ window.COURSE = {
         { type: "fill", part: "Isian", q: "Lengkapi kalimatnya (artinya: Gimana kabarnya?)", before: "Hi. ", after: "is it going?", answers: ["how"],
           why: "How is it going? adalah sapaan santai." },
         { type: "order", part: "Susun kalimat", q: "Susun menjadi jawaban yang benar.", tokens: ["I", "am", "fine,", "thanks."], answer: "I am fine, thanks.",
-          why: "Urutan: I am + fine + thanks." }
+          why: "Urutan: I am + fine + thanks." },
+        { type: "fillset", part: "Isian beruntun", q: "Lengkapi lima sapaan dan jawaban di bawah ini.",
+          items: [
+            { q: "Menyapa teman. (Artinya: Hai, apa kabar?)", before: "Hi, how", after: "you?", answers: ["are"], why: "How are you? adalah sapaan umum untuk menanyakan kabar." },
+            { q: "Menjawab dengan baik. (Artinya: Saya baik, terima kasih.)", before: "I am", after: ", thanks.", answers: ["fine"], why: "I am fine, thanks. adalah jawaban yang umum." },
+            { q: "Sapaan santai. (Artinya: Ada apa? / Gimana?)", before: "What's", after: "?", answers: ["up"], why: "What's up? adalah sapaan santai di antara teman." },
+            { q: "Jawaban santai. (Artinya: Biasa saja.)", before: "Nothing", after: ".", answers: ["special"], why: "Nothing special = biasa saja." },
+            { q: "Menjawab saat kurang sehat. (Artinya: Saya kurang enak badan.)", before: "I'm not feeling", after: ".", answers: ["well"], why: "I'm not feeling well = saya kurang enak badan." }
+          ] }
       ]
     },
 
@@ -256,7 +264,7 @@ window.COURSE = {
             rows: [["Rumus", "Yes, I do. / No, I don't. Kalau ditanya Why?, awali alasanmu dengan {{Because}}."], ["Penjelasan", "==Jawaban singkat dulu==, lalu **alasan**. Alasan yang sama dipakai di kalimat I study English because …"]],
             ex: [["Do you like English? / Yes, I do.", "Kamu suka bahasa Inggris? / Ya, suka."], ["Why? / {{Because}} it is fun.", "Kenapa? / Karena menyenangkan."], ["I study English {{because}} I want to travel.", "Saya belajar bahasa Inggris karena ingin bepergian."]] }
         ]},
-        { t: "fix", title: "Kesalahan yang sering terjadi", hint: "Dalam kalimat Inggris selalu ada kata kerja (am, is, are). Inilah sebabnya kita bilang My name is Rina, bukan My name Rina.", items: [
+        { t: "fix", side: true, title: "Kesalahan yang sering terjadi", hint: "Dalam kalimat Inggris selalu ada kata kerja (am, is, are). Inilah sebabnya kita bilang My name is Rina, bukan My name Rina.", items: [
           ["My name Rina.", "My name is Rina.", "Kalimat Inggris butuh ==kata kerja==. Untuk nama, kata kerjanya {{is}}."],
           ["I student.", "I am {{a}} student.", "Pasangan I adalah {{am}}, dan student diawali bunyi konsonan jadi memakai {{a}}."],
           ["I from Bandung.", "I am from Bandung.", "Sebelum from harus ada {{am}}: I {{am}} from Bandung."],
@@ -311,7 +319,15 @@ window.COURSE = {
         { type: "fill", part: "Isian", q: "Lengkapi kalimatnya (artinya: Aku belajar bahasa Inggris karena ingin bepergian).", before: "I study English", after: "I want to travel.", answers: ["because"],
           why: "Because dipakai untuk menjelaskan alasan." },
         { type: "order", part: "Susun kalimat", q: "Susun menjadi kalimat perkenalan.", tokens: ["Let", "me", "introduce", "myself."], answer: "Let me introduce myself.",
-          why: "Let me introduce myself adalah cara sopan membuka perkenalan." }
+          why: "Let me introduce myself adalah cara sopan membuka perkenalan." },
+        { type: "fillset", part: "Isian beruntun", q: "Lengkapi lima kalimat perkenalan di bawah ini.",
+          items: [
+            { q: "Menjawab asal. (Artinya: Saya berasal dari Medan.)", before: "I", after: "from Medan.", answers: ["am"], why: "Where are you from? dijawab I am from …" },
+            { q: "Hobimu ada dua. (Artinya: Hobi saya membaca dan berenang.)", before: "My", after: "are reading and swimming.", answers: ["hobbies"], why: "Hobi lebih dari satu memakai hobbies dan are." },
+            { q: "Menjawab tidak suka. Do you like football? (Artinya: Tidak.)", before: "No, I", after: ".", answers: ["don't", "dont", "do not"], why: "Pertanyaan berawalan Do dijawab No, I don't." },
+            { q: "Menyebut pekerjaan. (Artinya: Saya seorang insinyur.)", before: "I am", after: "engineer.", answers: ["an"], why: "Engineer diawali bunyi vokal, jadi memakai an." },
+            { q: "Menanyakan cita-cita. (Artinya: Apa cita-citamu?)", before: "What is your", after: "?", answers: ["dream"], why: "What is your dream? menanyakan cita-cita." }
+          ] }
       ]
     },
 
@@ -376,7 +392,7 @@ window.COURSE = {
             rows: [["Rumus", "{{It's}} + **huruf demi huruf**."], ["Penjelasan", "Jawab dengan {{It's}} lalu sebut hurufnya ==satu per satu==. Kalau lawan bicara ingin memastikan, dia akan mengulang dengan {{Is that …?}} lalu kamu jawab {{Yes, that's right.}}"]],
             ex: [["It's R – I – N – A.", "Ejaannya R, I, N, A."], ["Is that R – I – N – A?", "Apakah itu R, I, N, A?"], ["Yes, that's right.", "Ya, benar."]] }
         ]},
-        { t: "fix", title: "Kesalahan yang sering terjadi", hint: "Satu kesalahan kecil pada kata kerja atau urutan kata membuat pertanyaan ejaan terdengar aneh. Periksa keduanya.", items: [
+        { t: "fix", side: true, title: "Kesalahan yang sering terjadi", hint: "Satu kesalahan kecil pada kata kerja atau urutan kata membuat pertanyaan ejaan terdengar aneh. Periksa keduanya.", items: [
           ["How you spell \"table\"?", "How do you spell \"table\"?", "Pertanyaan butuh {{do}}: How + {{do}} + you + spell …?"],
           ["Can you spelling \"table\"?", "Can you spell \"table\"?", "Setelah can dipakai ==kata kerja dasar==: {{spell}}, bukan spelling."],
           ["Please spells your name.", "Please spell your name.", "Kalimat perintah memakai ==kata kerja dasar== tanpa -s."],
@@ -445,7 +461,11 @@ window.COURSE = {
         { type: "mc", part: "Cara mengeja", q: "Kata \"pillow\" punya huruf kembar. Cara mengejanya?", options: ["P – I – double L – O – W", "P – I – L – O – W", "P – double I – L – O – W", "P – I – L – double O – W"], answer: 0,
           why: "Huruf L pada pillow ada dua, jadi disebut double L." },
         { type: "mc", part: "Percakapan ejaan", q: "Temanmu bilang: \"Please spell your name.\" Jawaban yang tepat?", options: ["R-I-N-A.", "Yes, I do.", "I am fine.", "Not so bad."], answer: 0,
-          why: "Spell artinya mengeja, jadi jawab dengan huruf-huruf namamu." }
+          why: "Spell artinya mengeja, jadi jawab dengan huruf-huruf namamu." },
+        { type: "fillset", part: "Tebak kata", listen: true, pass: 0.8, q: "Dengarkan ejaan, lalu ketik katanya. Kamu boleh memutar berkali-kali, atau tekan Pelan.",
+          items: [
+            { spell: "COFFEE", answers: ["coffee"] }, { spell: "YELLOW", answers: ["yellow"] }, { spell: "JACKET", answers: ["jacket"] }, { spell: "SUMMER", answers: ["summer"] }, { spell: "QUEEN", answers: ["queen"] }
+          ] }
       ]
     },
 
@@ -684,7 +704,7 @@ window.COURSE = {
             rows: [["Rumus", "Take the {{first}}/{{second}}/{{third}} turn + on the left/right."], ["Penjelasan", "Kalau ada banyak belokan, sebut ==belokan yang keberapa==. {{First}} artinya pertama, {{second}} kedua, dan {{third}} ketiga."]],
             ex: [["Take the {{second}} turn on the left.", "Ambil belokan kedua di sebelah kiri."], ["Take the {{first}} turn on the right.", "Ambil belokan pertama di sebelah kanan."]] }
         ]},
-        { t: "fix", title: "Kesalahan yang sering terjadi", hint: "Perhatikan kata depan (at, on, until) dan urutan kata. Kesalahan kecil di sini membuat petunjuk membingungkan.", items: [
+        { t: "fix", side: true, title: "Kesalahan yang sering terjadi", hint: "Perhatikan kata depan (at, on, until) dan urutan kata. Kesalahan kecil di sini membuat petunjuk membingungkan.", items: [
           ["Turn right in the crossroad.", "Turn right {{at}} the crossroad.", "Untuk titik tempat berbelok dipakai {{at}}, bukan in."],
           ["The cinema is in your right side.", "The cinema is {{on}} your right side.", "Sisi kiri atau kanan memakai {{on}}."],
           ["Go straight until at the roundabout.", "Go straight {{until}} the roundabout.", "{{Until}} langsung diikuti tempat, ==tanpa at==."],
@@ -747,7 +767,15 @@ window.COURSE = {
         { type: "fill", part: "Isian", q: "Lengkapi kalimatnya (artinya: di samping).", before: "The mosque is", after: "the park.", answers: ["beside", "next to"],
           why: "Beside atau next to berarti di samping." },
         { type: "order", part: "Susun kalimat", q: "Susun menjadi kalimat bertanya arah.", tokens: ["Could", "you", "tell", "me", "how", "to", "get", "to", "the", "airport?"], answer: "Could you tell me how to get to the airport?",
-          why: "Polanya: Could you tell me how to get to + tempat?" }
+          why: "Polanya: Could you tell me how to get to + tempat?" },
+        { type: "fillset", part: "Isian beruntun", q: "Lengkapi lima petunjuk arah di bawah ini.",
+          items: [
+            { q: "Titik belok. (Artinya: Belok kanan di perempatan.)", before: "Turn right", after: "the crossroad.", answers: ["at"], why: "At menunjuk titik tempat berbelok." },
+            { q: "Urutan langkah. (Artinya: Pertama, lurus dua blok.)", before: "", after: ", go straight for two blocks.", answers: ["first"], why: "First membuka urutan langkah." },
+            { q: "Menghitung belokan. (Artinya: Ambil belokan ketiga di sebelah kanan.)", before: "Take the", after: "turn on the right.", answers: ["third"], why: "Belokan ketiga = the third turn." },
+            { q: "Menyebut posisi. (Artinya: Bank itu di antara sekolah dan rumah sakit.)", before: "The bank is", after: "the school and the hospital.", answers: ["between"], why: "Between berarti di antara dua tempat." },
+            { q: "Langkah terakhir. (Artinya: Terakhir, kamu akan melihat sekolah di kananmu.)", before: "", after: ", you will see the school on your right.", answers: ["finally"], why: "Finally menutup urutan langkah." }
+          ] }
       ]
     },
 
@@ -833,7 +861,7 @@ window.COURSE = {
             rows: [["Rumus", "It is {{used for}} + **kata kerja-ing**."], ["Penjelasan", "Setelah for, kata kerja ditambah ==-ing==. {{Used for}} artinya dipakai untuk."]],
             ex: [["It is {{used for}} making calls.", "Dipakai untuk menelepon."], ["It is {{used for}} taking photos.", "Dipakai untuk memotret."], ["It is {{used for}} carrying books.", "Dipakai untuk membawa buku."]] }
         ]},
-        { t: "fix", title: "Kesalahan yang sering terjadi", hint: "Hampir semua kesalahan ada pada kata kerja is, kata depan of dan in, atau bentuk -ing. Periksa tiga hal itu.", items: [
+        { t: "fix", side: true, title: "Kesalahan yang sering terjadi", hint: "Hampir semua kesalahan ada pada kata kerja is, kata depan of dan in, atau bentuk -ing. Periksa tiga hal itu.", items: [
           ["It made of glass.", "It is {{made of}} glass.", "Kalimat Inggris butuh {{is}}: It {{is}} made of glass."],
           ["It is made from Korea.", "It is made in Korea.", "Tempat pembuatan memakai {{in}}. Bahan memakai {{of}}."],
           ["It is used for take photos.", "It is {{used for}} taking photos.", "Setelah for, pakai ==kata kerja + ing==."],
@@ -910,7 +938,15 @@ window.COURSE = {
         { type: "fill", part: "Isian", q: "Lengkapi kalimatnya (artinya: dibuat di Korea Selatan).", before: "It is made", after: "South Korea.", answers: ["in"],
           why: "Untuk tempat pembuatan dipakai made in." },
         { type: "mc", part: "Arti kata", q: "\"Sophisticated\" artinya …", options: ["Canggih", "Sederhana", "Murah", "Kotor"], answer: 0,
-          why: "Sophisticated = canggih." }
+          why: "Sophisticated = canggih." },
+        { type: "fillset", part: "Isian beruntun", q: "Lengkapi lima kalimat deskripsi benda di bawah ini.",
+          items: [
+            { q: "Berat. (Artinya: Tas itu ringan.)", before: "The bag is", after: ".", answers: ["light"], why: "Ringan = light." },
+            { q: "Bahan. (Artinya: Meja ini terbuat dari kayu.)", before: "The table is made", after: "wood.", answers: ["of"], why: "Untuk bahan dipakai made of." },
+            { q: "Benda jamak. (Artinya: Sepatu itu besar.)", before: "The shoes", after: "big.", answers: ["are"], why: "Benda jamak memakai are." },
+            { q: "Fungsi. (Artinya: Pensil dipakai untuk menulis.)", before: "It is used for", after: ".", answers: ["writing"], why: "Setelah for dipakai kata kerja-ing: writing." },
+            { q: "Kondisi. (Artinya: Ponsel itu dalam kondisi baik.)", before: "The phone is in good", after: ".", answers: ["condition"], why: "Good condition = kondisi baik." }
+          ] }
       ]
     }
   ]

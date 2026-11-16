@@ -644,6 +644,27 @@
     'cross': () => '<path d="M0 40h240v60H0z" fill="' + MV.road + '"/>' + [0, 1, 2, 3, 4, 5, 6].map((i) => '<rect x="98" y="' + (44 + i * 8.6) + '" width="44" height="4.6" fill="#fff"/>').join('') +
       '<g transform="translate(46 80)">' + mvCar() + '</g>' + mvRoute('M120 14V112', '111,108 120,128 129,108') + mvMover(mvPerson(), 'M120 -12V152', [120, 70, 90], 4.4, 0, 'cross')
   };
+  /* kata posisi: gedung sasaran (kuning) berdenyut, gedung acuan berwarna ungu muda */
+  function mvB(x, y, w, h, kind) {
+    const f = kind === 't' ? MV.sun : '#E8E4FF';
+    return '<g' + (kind === 'f' ? ' opacity=".45"' : '') + '><rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="5" fill="' + f + '" stroke="' + MV.navy + '" stroke-width="2"/>' +
+      '<rect x="' + (x + 8) + '" y="' + (y + 8) + '" width="8" height="6" fill="' + MV.mint + '" stroke="' + MV.navy + '" stroke-width="1"/><rect x="' + (x + w - 16) + '" y="' + (y + 8) + '" width="8" height="6" fill="' + MV.mint + '" stroke="' + MV.navy + '" stroke-width="1"/>' +
+      (kind === 't' ? '<rect class="mv-pulse" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="5" fill="none" stroke="' + MV.route + '" stroke-width="3"/>' : '') + '</g>';
+  }
+  const mvRoadH = '<rect x="0" y="104" width="240" height="36" fill="' + MV.road + '"/>';
+  const mvCarH = () => mvMover(mvCar(), 'M-30 122H270', [40, 122, 0], 5, 0.85, 'roadh');
+  Object.assign(MV_SCENES, {
+    'left side': () => '<path d="M100 0h40v140h-40z" fill="' + MV.road + '"/>' + mvB(40, 40, 44, 44, 't') + mvB(160, 62, 44, 44, 'r') + mvMover(mvCar(), 'M120 165V-25', [120, 108, -90], 3.6, 0, 'straight'),
+    'right side': () => '<g transform="translate(240 0) scale(-1 1)"><path d="M100 0h40v140h-40z" fill="' + MV.road + '"/>' + mvB(40, 40, 44, 44, 't') + mvB(160, 62, 44, 44, 'r') + mvMover(mvCar(), 'M120 165V-25', [120, 108, -90], 3.6, 0, 'straight') + '</g>',
+    'between': () => mvRoadH + mvB(20, 48, 52, 44, 'r') + mvB(94, 48, 52, 44, 't') + mvB(168, 48, 52, 44, 'r') + mvCarH(),
+    'behind': () => mvRoadH + mvB(88, 52, 64, 40, 'r') + mvB(88, 6, 64, 40, 't') + mvCarH(),
+    'in front of': () => mvRoadH + mvB(88, 6, 64, 40, 'r') + mvB(88, 52, 64, 40, 't') + mvCarH(),
+    'beside': () => mvRoadH + mvB(48, 50, 56, 42, 'r') + mvB(112, 50, 56, 42, 't') + mvCarH(),
+    'near': () => mvRoadH + mvB(24, 44, 52, 48, 'r') + mvB(100, 56, 44, 36, 't') + mvB(176, 14, 46, 38, 'f') + '<path d="M78 74H98" stroke="' + MV.route + '" stroke-width="3" stroke-dasharray="4 4" stroke-linecap="round"/>' + mvCarH(),
+    'in the corner': () => '<path d="M0 62h240v38H0z M100 0h40v140h-40z" fill="' + MV.road + '"/>' + mvB(148, 14, 62, 38, 't') + mvB(30, 14, 62, 38, 'f') + mvMover(mvCar(), 'M-30 81H270', [40, 81, 0], 5, 0.85, 'roadc'),
+    'opposite': () => '<path d="M0 56h240v36H0z" fill="' + MV.road + '"/>' + mvB(88, 8, 64, 40, 'r') + mvB(88, 100, 64, 36, 't') + '<path d="M120 60V88" stroke="' + MV.route + '" stroke-width="3" stroke-dasharray="5 5" stroke-linecap="round"/><polygon points="113,61 120,50 127,61" fill="' + MV.route + '"/><polygon points="113,87 120,98 127,87" fill="' + MV.route + '"/>' + mvMover(mvCar(), 'M-30 74H270', [40, 74, 0], 5, 0.85, 'roadm'),
+    'until': () => '<path d="M100 0h40v140h-40z" fill="' + MV.road + '"/>' + mvB(84, 4, 72, 34, 't') + '<path d="M120 132V70" stroke="' + MV.route + '" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round"/>' + mvMover(mvCar(4), 'M120 165V64', [120, 64, -90], 4, 0.5, 'stop-far')
+  });
   function moveScene(en) {
     const f = MV_SCENES[String(en || '').trim().toLowerCase()];
     return f ? '<span class="fc-anim" aria-hidden="true"><svg viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" focusable="false">' + f() + '</svg></span>' : '';
@@ -755,10 +776,12 @@
   function rvState(k) { return (P.rv[k] = P.rv[k] || { open: {} }); }
   function miniClock(h, m) {
     const ah = (h % 12) * 30 + m * 0.5; const am = m * 6; let t = '';
-    for (let i = 0; i < 12; i++) { const a = (i * 30 * Math.PI) / 180; t += '<line x1="' + (50 + 38 * Math.sin(a)).toFixed(1) + '" y1="' + (50 - 38 * Math.cos(a)).toFixed(1) + '" x2="' + (50 + 44 * Math.sin(a)).toFixed(1) + '" y2="' + (50 - 44 * Math.cos(a)).toFixed(1) + '" stroke="#1F2340" stroke-width="' + (i % 3 === 0 ? 4 : 2) + '" stroke-linecap="round"/>'; }
-    return '<svg viewBox="0 0 100 100" class="rv-clock" aria-hidden="true"><circle cx="50" cy="50" r="47" fill="#fff" stroke="#1F2340" stroke-width="4"/>' + t +
-      '<line x1="50" y1="52" x2="50" y2="28" stroke="#1F2340" stroke-width="5" stroke-linecap="round" transform="rotate(' + ah + ' 50 50)"/>' +
-      '<line x1="50" y1="54" x2="50" y2="15" stroke="#4B3FE0" stroke-width="3.5" stroke-linecap="round" transform="rotate(' + am + ' 50 50)"/><circle cx="50" cy="50" r="4" fill="#FFC93C" stroke="#1F2340" stroke-width="2"/></svg>';
+    for (let i = 0; i < 12; i++) { const a = (i * 30 * Math.PI) / 180; t += '<line x1="' + (50 + 37 * Math.sin(a)).toFixed(1) + '" y1="' + (50 - 37 * Math.cos(a)).toFixed(1) + '" x2="' + (50 + 42 * Math.sin(a)).toFixed(1) + '" y2="' + (50 - 42 * Math.cos(a)).toFixed(1) + '" stroke="' + (i % 3 === 0 ? '#1F2340' : '#8E89C4') + '" stroke-width="' + (i % 3 === 0 ? 3 : 2) + '" stroke-linecap="round"/>'; }
+    return '<svg viewBox="0 0 100 100" class="rv-clock" aria-hidden="true"><defs><radialGradient id="mclkf" cx="50%" cy="38%" r="72%"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1EFFC"/></radialGradient></defs>' +
+      '<circle cx="50" cy="50" r="47" fill="url(#mclkf)" stroke="#1F2340" stroke-width="3"/>' + t +
+      '<polygon points="48,54 52,54 51,26 49,26" fill="#1F2340" stroke="#1F2340" stroke-width="2" stroke-linejoin="round" transform="rotate(' + ah + ' 50 50)"/>' +
+      '<polygon points="49,56 51,56 50.6,14 49.4,14" fill="#4B3FE0" stroke="#4B3FE0" stroke-width="1.6" stroke-linejoin="round" transform="rotate(' + am + ' 50 50)"/>' +
+      '<circle cx="50" cy="50" r="4.2" fill="#FFFFFF" stroke="#1F2340" stroke-width="2"/><circle cx="50" cy="50" r="1.6" fill="#4B3FE0"/></svg>';
   }
   function flipEx(it, x) {
     if (!it.flip) return '';
@@ -852,22 +875,23 @@
     for (let i = 0; i < 60; i++) {
       const a = (i * 6 * Math.PI) / 180; const big = i % 5 === 0;
       const r1 = big ? 122 : 128; const r2 = 134;
-      t += '<line x1="' + (150 + r1 * Math.sin(a)).toFixed(1) + '" y1="' + (150 - r1 * Math.cos(a)).toFixed(1) + '" x2="' + (150 + r2 * Math.sin(a)).toFixed(1) + '" y2="' + (150 - r2 * Math.cos(a)).toFixed(1) + '" stroke="#1F2340" stroke-width="' + (big ? 3 : 1.4) + '" stroke-linecap="round"/>';
+      t += '<line x1="' + (150 + r1 * Math.sin(a)).toFixed(1) + '" y1="' + (150 - r1 * Math.cos(a)).toFixed(1) + '" x2="' + (150 + r2 * Math.sin(a)).toFixed(1) + '" y2="' + (150 - r2 * Math.cos(a)).toFixed(1) + '" stroke="' + (big ? '#1F2340' : '#B9B4DC') + '" stroke-width="' + (big ? 3 : 1.2) + '" stroke-linecap="round"/>';
     }
     let nums = '';
     for (let n = 1; n <= 12; n++) {
-      const a = (n * 30 * Math.PI) / 180;
-      nums += '<text x="' + (150 + 100 * Math.sin(a)).toFixed(1) + '" y="' + (150 - 100 * Math.cos(a)).toFixed(1) + '" text-anchor="middle" dominant-baseline="central" font-family="Poppins,Segoe UI,sans-serif" font-weight="700" font-size="' + (face === 'roman' ? 17 : 25) + '" fill="#1F2340">' + (face === 'roman' ? ROMAN[n % 12] : n) + '</text>';
+      const a = (n * 30 * Math.PI) / 180; const main = n % 3 === 0;
+      nums += '<text x="' + (150 + 101 * Math.sin(a)).toFixed(1) + '" y="' + (150 - 101 * Math.cos(a)).toFixed(1) + '" text-anchor="middle" dominant-baseline="central" font-family="Poppins,Segoe UI,sans-serif" font-weight="' + (main ? 700 : 500) + '" font-size="' + (face === 'roman' ? 16 : 23) + '" stroke="#F6F5FF" stroke-width="5" stroke-linejoin="round" paint-order="stroke" fill="' + (main ? '#1F2340' : '#4A4E78') + '">' + (face === 'roman' ? ROMAN[n % 12] : n) + '</text>';
     }
-    return '<svg viewBox="0 0 300 300" class="clk-svg" aria-hidden="true"><circle cx="150" cy="150" r="144" fill="#fff" stroke="#1F2340" stroke-width="6"/>' + t + nums +
-      '<g class="hand hh" style="transform:rotate(' + ah + 'deg)"><line x1="150" y1="158" x2="150" y2="86" stroke="#1F2340" stroke-width="10" stroke-linecap="round"/></g>' +
-      '<g class="hand hm" style="transform:rotate(' + am + 'deg)"><line x1="150" y1="162" x2="150" y2="46" stroke="#4B3FE0" stroke-width="6" stroke-linecap="round"/></g>' +
-      '<circle cx="150" cy="150" r="10" fill="#FFC93C" stroke="#1F2340" stroke-width="3"/></svg>';
+    return '<svg viewBox="0 0 300 300" class="clk-svg" aria-hidden="true"><defs><radialGradient id="clkf" cx="50%" cy="38%" r="72%"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1EFFC"/></radialGradient></defs>' +
+      '<circle cx="150" cy="150" r="146" fill="#FFFFFF" stroke="#1F2340" stroke-width="3"/><circle cx="150" cy="150" r="139" fill="url(#clkf)" stroke="#E2DFF5" stroke-width="2"/>' + t +
+      '<g class="hand hh" style="transform:rotate(' + ah + 'deg)"><polygon points="145,162 155,162 153,88 147,88" fill="#1F2340" stroke="#1F2340" stroke-width="3" stroke-linejoin="round"/></g>' +
+      '<g class="hand hm" style="transform:rotate(' + am + 'deg)"><polygon points="147,168 153,168 151.6,42 148.4,42" fill="#4B3FE0" stroke="#4B3FE0" stroke-width="2.5" stroke-linejoin="round"/></g>' + nums +
+      '<circle cx="150" cy="150" r="9" fill="#FFFFFF" stroke="#1F2340" stroke-width="3"/><circle cx="150" cy="150" r="3.5" fill="#4B3FE0"/></svg>';
   }
   function clockReading(st, k) {
     const br = readBritish(st.h, st.m); const am = readAmerican(st.h, st.m);
     if (st.tebak && !st.reveal) {
-      return '<div class="clk-read"><p class="clk-guess">Mode tebak: lihat jamnya, lalu coba ucapkan dalam bahasa Inggris. Setelah itu tekan tombol di bawah untuk mengecek.</p><button type="button" class="btn btn-primary" data-act="clkReveal" data-k="' + k + '">Lihat jawaban</button></div>';
+      return '<div class="clk-read"><p class="clk-guess"><b>Mode tebak</b>Lihat jamnya, lalu coba ucapkan dalam bahasa Inggris. Setelah itu tekan tombol di bawah untuk mengecek.</p><button type="button" class="btn btn-primary" data-act="clkReveal" data-k="' + k + '">Lihat jawaban</button></div>';
     }
     const row = (cls, tag, r) => '<div class="clk-row ' + cls + '"><span class="clk-tag">' + tag + '</span><b>' + esc(cap(r.t)) + '</b>' + sayX("It's " + r.t + '.') + '</div><p class="clk-why">' + esc(r.why) + '</p>';
     return '<div class="clk-read" aria-live="polite">' + row('brit', 'British', br) + row('amer', 'American', am) + '<p class="clk-meta">Waktu: <strong>' + dayPart(st.h) + '</strong> (' + (st.h < 12 ? 'a.m.' : 'p.m.') + ')</p></div>';
@@ -882,7 +906,7 @@
       '<div class="sec-row"><h3 style="font-size:20px">' + esc(b.title) + '</h3><button type="button" class="chip-btn" data-act="clkFull" data-k="' + k + '">' + (st.full ? 'Tutup layar penuh' : 'Layar penuh') + '</button></div>' +
       (b.lead ? '<p class="muted">' + b.lead + '</p>' : '') +
       '<div class="clk-main"><button type="button" class="clk-face" data-act="clkNew" data-k="' + k + '" role="img" aria-label="Jam analog menunjukkan ' + digital + '. Tekan untuk jam acak berikutnya.">' + analogSVG(st.face, angles.ah, angles.am) + '</button>' +
-      '<div class="clk-side"><button type="button" class="clk-digital" data-act="clkNew" data-k="' + k + '" aria-label="Jam digital ' + digital + '. Tekan untuk jam acak berikutnya."><span class="clk-time">' + digital + '</span>' + ampm + '</button>' + clockReading(st, k) + '</div></div>' +
+      '<div class="clk-side"><button type="button" class="clk-digital" data-act="clkNew" data-k="' + k + '" aria-label="Jam digital ' + digital + '. Tekan untuk jam acak berikutnya."><span class="clk-time">' + digital.replace(':', '<i class="clk-colon">:</i>') + '</span>' + ampm + '</button>' + clockReading(st, k) + '</div></div>' +
       '<div class="clk-actions"><button type="button" class="btn btn-primary clk-new" data-act="clkNew" data-k="' + k + '">Jam acak</button>' +
       '<div class="clk-nudge" role="group" aria-label="Geser waktu"><button type="button" class="chip-btn" data-act="clkStep" data-k="' + k + '" data-v="-60">− 1 jam</button><button type="button" class="chip-btn" data-act="clkStep" data-k="' + k + '" data-v="-5">− 5 mnt</button><button type="button" class="chip-btn" data-act="clkStep" data-k="' + k + '" data-v="5">+ 5 mnt</button><button type="button" class="chip-btn" data-act="clkStep" data-k="' + k + '" data-v="60">+ 1 jam</button></div></div>' +
       '<details class="clk-set"' + (st.setOpen ? ' open' : '') + '><summary>Pengaturan jam</summary><div class="clk-opts">' +
