@@ -47,7 +47,7 @@
   const store = () => user() || GUEST;
   function prog(id) {
     const s = store();
-    if (!s.progress[id]) s.progress[id] = { done: false, stepsDone: {}, scores: {}, apply: { text: '', checks: [] } };
+    if (!s.progress[id]) s.progress[id] = { done: false, stepsDone: {}, scores: {}, apply: { text: '', checks: [], reads: {} } };
     return s.progress[id];
   }
 
@@ -367,7 +367,7 @@
     const onLanding = parts.length === 0;
     let nav = '';
     if (u) {
-      nav = '<a href="#dashboard">Beranda</a><a href="#data">Data saya</a>' +
+      nav = '<a href="#dashboard">Beranda</a><a href="#laporan">Laporan</a><a href="#data">Data saya</a>' +
         '<span class="avatar" aria-hidden="true">' + esc((u.name || '?').charAt(0).toUpperCase()) + '</span>' +
         '<button type="button" class="linklike" data-act="logout">Keluar</button>';
     } else if (onLanding) {
@@ -449,13 +449,13 @@
         '<div class="hero-art">' + PORTRAIT + '</div></section>' +
 
       '<section class="band" style="background:#fff"><div class="container section"><div class="sec-head"><span class="eyebrow">Masalah yang umum</span><h2>Kamu nggak sendirian kalau merasa begini</h2></div><div class="grid">' +
-        '<div class="card" style="background:var(--cream)"><h3 style="font-size:22px;margin-bottom:8px">Kosakata terasa kurang</h3><p class="muted">Mau bilang sesuatu, tapi katanya nggak ketemu.</p></div>' +
-        '<div class="card" style="background:var(--coral-light)"><h3 style="font-size:22px;margin-bottom:8px">Takut salah ngomong</h3><p class="muted">Sebenarnya tahu jawabannya, tapi malu kalau salah.</p></div>' +
-        '<div class="card" style="background:var(--lav)"><h3 style="font-size:22px;margin-bottom:8px">Bingung menyusun kalimat</h3><p class="muted">Kata-katanya ada, tapi susunannya belum pas.</p></div>' +
+        '<div class="card" style="background:var(--cream)"><h3 style="font-size:22px;margin-bottom:8px">Kosakata terasa kurang</h3><p class="muted">Mau bilang sesuatu, tapi katanya nggak ketemu.</p>' + helpBox('Kata dipelajari sebagai frasa utuh dalam situasi nyata, lengkap dengan tombol dengar. Mode Sembunyikan arti melatih kamu mengingat dulu sebelum melihat jawaban, lalu kata diulas lagi di akhir pelajaran.') + '</div>' +
+        '<div class="card" style="background:var(--coral-light)"><h3 style="font-size:22px;margin-bottom:8px">Takut salah ngomong</h3><p class="muted">Sebenarnya tahu jawabannya, tapi malu kalau salah.</p>' + helpBox('Kamu belajar dengan kecepatan sendiri, dan setiap jawaban langsung dikoreksi. Kesalahan yang sering terjadi ditampilkan Salah dan Benar berdampingan, jadi kamu tahu itu hal yang wajar. Di langkah Praktikkan kamu bisa membaca dengan suara sendirian, tanpa ada yang menilai, lalu melihat kata mana yang perlu diulang.') + '</div>' +
+        '<div class="card" style="background:var(--lav)"><h3 style="font-size:22px;margin-bottom:8px">Bingung menyusun kalimat</h3><p class="muted">Kata-katanya ada, tapi susunannya belum pas.</p>' + helpBox('Ada dialog dan contoh kalimat, soal menyusun kata, dan pola kalimat yang tinggal diganti isinya, jadi kamu tidak menyusun dari nol.') + '</div>' +
       '</div></div></section>' +
 
       '<section id="cara" class="container section"><div class="sec-head"><span class="eyebrow">Cara belajar</span><h2>Satu pelajaran, lima langkah singkat</h2><p class="muted" style="margin-top:10px;max-width:640px">Sekitar 10 menit per pelajaran, pas diselipkan di sela sekolah atau kuliah.</p></div><div class="grid steps5">' +
-        [['Pelajari', 'Dengar ekspresi kunci dalam situasi nyata.', '#FFC93C'], ['Pahami', 'Penjelasan singkat dalam bahasa Indonesia.', '#19B394'], ['Latihan', 'Jawab soal dan dapat koreksi langsung.', '#FF6B4A'], ['Praktikkan', 'Susun kalimatmu sendiri.', 'var(--accent)'], ['Ulas', 'Kuis singkat untuk mengecek.', '#1F2340']].map((s, i) =>
+        [['Pelajari', 'Dengar ekspresi kunci dalam situasi nyata.', '#FFC93C'], ['Pahami', 'Penjelasan singkat dalam bahasa Indonesia.', '#19B394'], ['Latihan', 'Jawab soal dan dapat koreksi langsung.', '#FF6B4A'], ['Praktikkan', 'Baca kalimat dengan suara dan dapat koreksi.', 'var(--accent)'], ['Ulas', 'Kuis singkat untuk mengecek.', '#1F2340']].map((s, i) =>
           '<div class="card"><span class="num" style="background:' + s[2] + ';color:' + (i >= 3 ? '#fff' : '#1F2340') + ';margin-bottom:12px" aria-hidden="true">' + (i + 1) + '</span><h3 style="font-size:20px;margin-bottom:6px">' + s[0] + '</h3><p class="muted" style="font-size:16px">' + s[1] + '</p></div>').join('') +
       '</div></section>' +
 
@@ -466,12 +466,12 @@
         '<div class="card card-shadow demo stack" style="flex:1 1 380px"><p class="q-label">Perbaiki kalimat ini</p><p class="q-text" style="font-size:24px">I am come from Bandung.</p><div class="opts">' + demo + '</div>' + demoFb + '</div></section>' +
 
       '<section id="harga" class="band" style="background:var(--cream)"><div class="container section"><div class="sec-head"><span class="eyebrow">Harga</span><h2>Mulai gratis, lanjut kalau cocok</h2></div><div class="price-grid">' +
-        '<div class="price-card"><h3 style="font-size:22px">Gratis</h3><p class="price">Rp0</p><ul><li>Pelajaran 1 tanpa akun</li><li>Pelajaran 2 dan 3 dengan akun gratis</li><li>Latihan dengan koreksi instan</li></ul><a class="btn" href="#pelajaran-salam">Mulai gratis</a></div>' +
+        '<div class="price-card"><h3 style="font-size:22px">Gratis</h3><p class="price">Rp0</p><ul><li>Pelajaran 1 tanpa akun</li><li>Pelajaran 2, 3, dan 7 dengan akun gratis</li><li>Latihan dengan koreksi instan</li></ul><a class="btn" href="#pelajaran-salam">Mulai gratis</a></div>' +
         '<div class="price-card card-shadow"><h3 style="font-size:22px">Course ' + esc(COURSE.title) + '</h3><p class="price">' + PLACEHOLDER_PRICE + '</p><ul><li>Semua pelajaran di course, sekali bayar</li><li>Latihan dan kuis di setiap pelajaran</li><li>Akses selama ' + PLACEHOLDER_DURATION + '</li></ul><a class="btn btn-primary" href="#beli">Beli course</a></div>' +
       '</div></div></section>' +
 
       '<section id="faq" class="container section" style="max-width:820px"><div class="sec-head"><span class="eyebrow">FAQ</span><h2>Pertanyaan yang sering muncul</h2></div><div class="list">' +
-        [['Harus daftar dulu?', 'Pelajaran 1 bisa dibuka tanpa akun. Untuk pelajaran 2 dan 3, kamu cukup membuat akun gratis.'],
+        [['Harus daftar dulu?', 'Pelajaran 1 bisa dibuka tanpa akun. Untuk pelajaran 2, 3, dan 7, kamu cukup membuat akun gratis.'],
          ['Bisa belajar lewat HP?', 'Bisa. Website dirancang untuk HP lebih dulu, lalu menyesuaikan untuk tablet dan komputer.'],
          ['Bayarnya langganan?', 'Saat ini course dibeli sekali bayar. Pilihan langganan baru dipertimbangkan setelah materi bertambah.'],
          ['Level apa yang cocok?', 'Course pertama untuk level Elementary: kamu sudah paham dasar, tapi kosakatanya terbatas dan masih takut berbicara.']].map((f) =>
@@ -525,7 +525,7 @@
       '<div class="cols"><div class="main">' + nextCard +
       '<section aria-labelledby="cm" class="stack"><div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px"><h2 id="cm" style="font-size:22px">' + esc(COURSE.title) + '</h2><span class="muted" style="font-size:15px">' + doneCount() + ' dari ' + LESSONS.length + ' pelajaran selesai</span></div>' +
       '<div class="list">' + LESSONS.map((l) => lessonRow(l, 'app')).join('') + '</div></section></div>' +
-      '<aside class="side">' + upsell + '<section class="card" style="background:var(--lav-light)"><h2 style="font-size:17px;margin-bottom:6px">Data saya</h2><p class="muted" style="font-size:15px;margin-bottom:12px">Unduh cadangan kemajuan belajarmu, atau buka mode uji.</p><a class="btn btn-small btn-flat" href="#data">Buka Data saya</a></section></aside></div></main>' + FOOT;
+      '<aside class="side">' + upsell + '<section class="card" style="background:var(--lav-light)"><h2 style="font-size:17px;margin-bottom:6px">Laporan hasil belajar</h2><p class="muted" style="font-size:15px;margin-bottom:12px">Lihat nilai Latihan dan Ulas di setiap pelajaran, lalu cetak atau simpan sebagai PDF.</p><a class="btn btn-small btn-flat" href="#laporan">Buka laporan</a></section><section class="card" style="background:var(--lav-light)"><h2 style="font-size:17px;margin-bottom:6px">Data saya</h2><p class="muted" style="font-size:15px;margin-bottom:12px">Unduh cadangan kemajuan belajarmu, atau buka mode uji.</p><a class="btn btn-small btn-flat" href="#data">Buka Data saya</a></section></aside></div></main>' + FOOT;
   }
 
   /* ---------- blok isi pelajaran ---------- */
@@ -962,6 +962,12 @@
     refreshClock(k);
   }
 
+  /* Pembicara pertama di kiri, lawan bicaranya di kanan. Satu pembicara saja (monolog) tetap di kanan. */
+  function dlgSide(d, who) {
+    const order = [];
+    d.lines.forEach((ln) => { if (order.indexOf(ln[0]) < 0) order.push(ln[0]); });
+    return order.length > 1 && order[0] === who ? 'l' : 'r';
+  }
   function chatScenes(scenes) {
     return scenes.map((sc) => '<div class="chat"><p class="chat-title">' + esc(sc.title) + '</p>' + sc.msgs.map((m, mi) => {
       const right = m.side === 'r';
@@ -1015,9 +1021,9 @@
           chatScenes(b.scenes) + (b.note ? '<p class="xp-note">' + b.note + '</p>' : '') + '</section>';
       }
       if (b.t === 'dialogs') {
-        const NM = { A: 'Rina', B: 'Budi' };
+        const NM = { A: 'Rina', B: 'Budi', T: 'Teacher', S: 'Student' };
         return '<section class="card stack chat-sec"><h3 style="font-size:20px">' + esc(b.title) + '</h3><p class="muted">Baca seperti membaca chat. Tekan ikon suara untuk mendengar tiap kalimat.</p>' +
-          chatScenes(b.items.map((d) => ({ title: d.title, msgs: d.lines.map((ln) => ({ who: NM[ln[0]] || ln[0], side: ln[0] === 'A' ? 'l' : 'r', en: ln[1], id: ln[2] })) }))) + '</section>';
+          chatScenes(b.items.map((d) => ({ title: d.title, msgs: d.lines.map((ln) => ({ who: NM[ln[0]] || ln[0], side: dlgSide(d, ln[0]), en: ln[1], id: ln[2] })) }))) + '</section>';
       }
       if (b.t === 'fix') {
         const side = !!b.side;
@@ -1171,7 +1177,7 @@
     const lastQ = P.exIdx === n - 1;
     fb += '<div class="ex-nav"><button type="button" class="btn" data-act="prevEx"' + (P.exIdx === 0 ? ' disabled' : '') + ' aria-label="Soal sebelumnya">' + ICON.back(18) + ' Kembali</button>' +
       '<button type="button" class="btn' + (answered ? ' btn-primary' : '') + '" data-act="nextEx" aria-label="' + (lastQ ? 'Lihat hasil' : 'Soal berikutnya') + '">' + (lastQ ? 'Lihat hasil' : 'Lanjut') + ' ' + ICON.next(18) + '</button></div>';
-    return '<section class="card card-shadow stack' + (ex.type === 'mc' ? ' exq' : '') + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext"><p class="q-label">Soal ' + (P.exIdx + 1) + ' dari ' + n + (ex.part ? ' · ' + esc(ex.part) : '') + '</p><p id="qtext" class="q-text">' + esc(ex.q) + '</p>' +
+    return '<section class="card card-shadow stack' + (ex.type === 'mc' ? ' exq' : '') + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext"><p class="q-label">Soal ' + (P.exIdx + 1) + ' dari ' + n + (ex.part ? ' · ' + esc(ex.part) : '') + '</p><p id="qtext" class="q-text">' + esc(ex.q) + '</p>' + (ex.say ? '<p class="ex-listen">' + sayX(ex.say) + '<span class="muted">Putar kalimatnya</span></p>' : '') +
       (ex.spell ? accentToggle() + listenRow(ex.spell) : '') + body + fb + '</section>';
   }
 
@@ -1243,18 +1249,257 @@
       main = P.summary ? summaryView(lesson, step) : exView(lesson, step.src);
     } else if (step.src === 'apply') {
       const a = lesson.apply;
-      main = '<section class="card card-shadow stack" aria-labelledby="tugas"><h2 id="tugas" style="font-size:20px">Tugas praktik</h2><p>' + esc(a.prompt) + '</p>' +
-        '<label class="sr-only" for="apply-text">Tulisanmu</label><textarea id="apply-text" class="write" data-bind="apply-text" placeholder="' + esc(a.placeholder) + '">' + esc(p.apply.text || '') + '</textarea>' +
-        '<fieldset style="border:0;padding:0;margin:0"><legend class="q-label" style="margin-bottom:6px">Cek dirimu sendiri</legend>' +
-        a.checks.map((c, i) => '<label class="check"><input type="checkbox" data-bind="apply-check" data-i="' + i + '"' + (p.apply.checks[i] ? ' checked' : '') + '><span>' + esc(c) + '</span></label>').join('') + '</fieldset>' +
-        '<details class="model"><summary>Lihat contoh jawaban</summary><pre>' + esc(a.model) + '</pre></details>' +
-        '<p class="muted" style="font-size:14px">Tulisanmu tersimpan otomatis di browser ini.</p></section>' + stepNav(si, STEPS[si + 1]);
+      main = '<section class="card card-shadow stack" aria-labelledby="tugas"><h2 id="tugas" style="font-size:20px">Baca dengan suara</h2><p>' + esc(a.prompt) + '</p><div id="rd-root">' + rdHTML(lesson) + '</div></section>' + stepNav(si, STEPS[si + 1]);
     }
     return header(['pelajaran']) + '<main id="main" class="page narrow">' + head + main + '</main>' + FOOT;
   }
   function stepNav(si, nextStep) {
     return '<div class="btn-row">' + (si > 0 ? '<button type="button" class="btn" data-act="prevStep">Kembali</button>' : '') +
       '<button type="button" class="btn btn-primary" data-act="nextStep">Lanjut: ' + nextStep.label + '</button></div>';
+  }
+
+  /* ---------- Praktikkan: baca dengan suara, dikoreksi otomatis (perkiraan) ---------- */
+  const SR_CTOR = () => window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  const NUMW = { '0': 'zero', '1': 'one', '2': 'two', '3': 'three', '4': 'four', '5': 'five', '6': 'six', '7': 'seven', '8': 'eight', '9': 'nine', '10': 'ten', '11': 'eleven', '12': 'twelve', '13': 'thirteen', '14': 'fourteen', '15': 'fifteen', '16': 'sixteen', '17': 'seventeen', '18': 'eighteen', '19': 'nineteen', '20': 'twenty', '30': 'thirty', '40': 'forty', '50': 'fifty' };
+  const CONTR = { "i'm": 'i am', "don't": 'do not', "it's": 'it is', "that's": 'that is', "what's": 'what is', "let's": 'let us', "can't": 'cannot', "didn't": 'did not', "doesn't": 'does not', "isn't": 'is not', "aren't": 'are not', "you're": 'you are', "we're": 'we are', "they're": 'they are', "he's": 'he is', "she's": 'she is', "there's": 'there is', "i'll": 'i will', "won't": 'will not', "couldn't": 'could not', "wouldn't": 'would not', "wasn't": 'was not', "how's": 'how is', "what's": 'what is' };
+  /* kalimat menjadi daftar kata baku (huruf kecil, tanpa tanda baca, singkatan dan angka disamakan) */
+  function normWords(s) {
+    const out = [];
+    String(s).toLowerCase().replace(/[‘’]/g, "'").replace(/(\d+):(\d+)/g, '$1 $2').replace(/[^a-z0-9' -]/g, ' ').replace(/-/g, ' ').split(/\s+/).forEach((w) => {
+      w = w.replace(/^'+|'+$/g, '');
+      if (!w) return;
+      if (CONTR[w]) { CONTR[w].split(' ').forEach((x) => out.push(x)); return; }
+      out.push(NUMW[w] || w);
+    });
+    return out;
+  }
+  function editDist(a, b) {
+    const m = a.length; const n = b.length; let prev = []; for (let j = 0; j <= n; j++) prev[j] = j;
+    for (let i = 1; i <= m; i++) {
+      const cur = [i];
+      for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = cur;
+    }
+    return prev[n];
+  }
+  function isNear(a, b) {
+    if (a === b) return false;
+    const L = Math.max(a.length, b.length);
+    if (L < 4) return false;
+    const d = editDist(a, b);
+    return d <= 1 || (L >= 8 && d <= 2) || a + 's' === b || b + 's' === a;
+  }
+  /* mensejajarkan kata target dengan kata yang terdengar: ok, near (mirip), bad (terdengar kata lain), miss (tidak terdengar) */
+  function alignWords(T, H) {
+    const n = T.length; const m = H.length; const INS = 0.6; const DEL = 1;
+    const D = []; const B = [];
+    for (let i = 0; i <= n; i++) { D[i] = new Array(m + 1).fill(0); B[i] = new Array(m + 1).fill(''); }
+    for (let i = 1; i <= n; i++) { D[i][0] = i * DEL; B[i][0] = 'd'; }
+    for (let j = 1; j <= m; j++) { D[0][j] = j * INS; B[0][j] = 'i'; }
+    for (let i = 1; i <= n; i++) {
+      for (let j = 1; j <= m; j++) {
+        const c = T[i - 1] === H[j - 1] ? 0 : (isNear(T[i - 1], H[j - 1]) ? 0.4 : 1);
+        const dg = D[i - 1][j - 1] + c; const dl = D[i - 1][j] + DEL; const ins = D[i][j - 1] + INS;
+        if (dg <= dl && dg <= ins) { D[i][j] = dg; B[i][j] = 'g'; } else if (dl <= ins) { D[i][j] = dl; B[i][j] = 'd'; } else { D[i][j] = ins; B[i][j] = 'i'; }
+      }
+    }
+    const res = new Array(n); let i = n; let j = m;
+    while (i > 0 || j > 0) {
+      const b = B[i][j];
+      if (b === 'g') {
+        const t = T[i - 1]; const h = H[j - 1];
+        res[i - 1] = t === h ? { st: 'ok' } : (isNear(t, h) ? { st: 'near', heard: h } : { st: 'bad', heard: h });
+        i--; j--;
+      } else if (b === 'd') { res[i - 1] = { st: 'miss' }; i--; } else { j--; }
+    }
+    return res;
+  }
+  function rdTokens(sentence) {
+    return String(sentence).split(/\s+/).filter(Boolean).map((t) => ({ t: t, n: normWords(t) }));
+  }
+  /* nilai token = yang terburuk dari bagian-bagiannya; skor kalimat dihitung per kata baku */
+  function rdApply(tokens, heardText, onlyIdx) {
+    const idxs = onlyIdx === undefined ? tokens.map((_, k) => k) : [onlyIdx];
+    const T = []; const own = [];
+    idxs.forEach((k) => tokens[k].n.forEach((w) => { T.push(w); own.push(k); }));
+    const al = alignWords(T, normWords(heardText));
+    const rank = { ok: 0, near: 1, bad: 2, miss: 3 };
+    idxs.forEach((k) => { tokens[k].st = tokens[k].n.length ? 'ok' : 'skip'; tokens[k].heard = ''; });
+    al.forEach((r, x) => {
+      const tk = tokens[own[x]];
+      if (tk.st === 'skip' || rank[r.st] > rank[tk.st] || (r.st === tk.st && !tk.heard && r.heard)) { tk.st = r.st; tk.heard = r.heard || ''; }
+    });
+  }
+  function rdScore(tokens) {
+    let tot = 0; let sum = 0;
+    tokens.forEach((tk) => { const w = tk.n.length; if (!w) return; tot += w; if (tk.st === 'ok') sum += w; else if (tk.st === 'near') sum += w * 0.5; });
+    return tot ? Math.round((sum / tot) * 100) : 0;
+  }
+  const rdLevel = (pc) => (pc >= 85 ? ['good', 'Bagus! Hampir semua katamu terbaca jelas.'] : pc >= 60 ? ['mid', 'Hampir tepat. Ulangi bagian yang bertanda.'] : ['low', 'Belum terbaca jelas. Dengarkan contoh, lalu coba lagi pelan-pelan.']);
+  const MIC = (s) => svg('<rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path>', s);
+  const STOP = (s) => svg('<rect x="6" y="6" width="12" height="12" rx="2"></rect>', s);
+  const RD = { rec: null, active: null, res: {}, msg: {}, ask: null, timer: null, lesson: null };
+
+  function rdAbort() {
+    clearTimeout(RD.timer);
+    if (RD.rec) { const r = RD.rec; RD.rec = null; try { r.onend = null; r.onerror = null; r.onresult = null; r.abort ? r.abort() : r.stop(); } catch (e) { /* abaikan */ } }
+    RD.active = null;
+  }
+  function rdSaveScore(lesson, i, pc, newAttempt) {
+    const p = prog(lesson.id);
+    if (!p.apply.reads) p.apply.reads = {};
+    const r = p.apply.reads[i] || { attempts: 0, best: null };
+    if (newAttempt) r.attempts = (r.attempts || 0) + 1;
+    r.best = Math.max(r.best || 0, pc);
+    p.apply.reads[i] = r; save();
+  }
+  function rdErrText(code) {
+    if (code === 'not-allowed' || code === 'service-not-allowed') return 'Mikrofon belum diizinkan. Tekan ikon gembok di kolom alamat, izinkan mikrofon, lalu coba lagi.';
+    if (code === 'no-speech') return 'Suaramu tidak terdengar. Dekatkan mikrofon dan coba lagi.';
+    if (code === 'audio-capture') return 'Mikrofon tidak ditemukan di perangkat ini.';
+    if (code === 'network') return 'Pengenalan suara butuh internet. Periksa koneksimu lalu coba lagi.';
+    if (code === 'aborted') return '';
+    return 'Pengenalan suara gagal. Coba lagi sebentar lagi.';
+  }
+  function rdStart(i, k) {
+    const lesson = lessonById(P.id); const Ctor = SR_CTOR();
+    if (!Ctor) { toast('Browser ini belum mendukung pengenalan suara.'); return; }
+    if (!DB.micAck) { RD.ask = { i: i, k: k }; rdRender(); return; }
+    rdAbort();
+    stopAudio(); try { if (hasTTS()) window.speechSynthesis.cancel(); } catch (e) { /* abaikan */ }
+    const sentence = lesson.apply.lines[i][0];
+    if (!RD.res[i]) RD.res[i] = { tokens: rdTokens(sentence), score: null, heardText: '' };
+    const r = new Ctor();
+    r.lang = ACCENTS[accentKey()].lang; r.interimResults = false; r.maxAlternatives = 1; r.continuous = false;
+    let got = false; let err = '';
+    r.onresult = (e) => {
+      got = true;
+      let text = '';
+      try { text = e.results[0][0].transcript; } catch (x) { text = ''; }
+      const res = RD.res[i];
+      rdApply(res.tokens, text, k);
+      res.heardText = text; res.score = rdScore(res.tokens);
+      rdSaveScore(lesson, i, res.score, k === undefined);
+      RD.msg[i] = '';
+    };
+    r.onerror = (e) => { err = e && e.error ? e.error : 'error'; };
+    r.onend = () => {
+      clearTimeout(RD.timer);
+      if (RD.rec === r) { RD.rec = null; RD.active = null; }
+      if (!got) RD.msg[i] = rdErrText(err) || 'Suaramu belum terbaca. Coba lagi.';
+      rdRender();
+    };
+    RD.rec = r; RD.active = { i: i, k: k }; RD.msg[i] = '';
+    try { r.start(); } catch (e) { RD.rec = null; RD.active = null; RD.msg[i] = 'Pengenalan suara belum bisa dimulai. Coba lagi.'; }
+    RD.timer = setTimeout(() => { try { r.stop(); } catch (e) { /* abaikan */ } }, 15000);
+    rdRender();
+  }
+  function rdWordCls(tk) { return tk.st ? ' w-' + tk.st : ''; }
+  function rdHTML(lesson) {
+    const a = lesson.apply; const p = prog(lesson.id); const reads = (p.apply && p.apply.reads) || {};
+    const sup = !!SR_CTOR();
+    let done = 0; let sum = 0; let cnt = 0;
+    a.lines.forEach((ln, i) => { const r = reads[i]; if (r) { done++; if (typeof r.best === 'number') { sum += r.best; cnt++; } } });
+    const sumLine = '<p class="rd-sum" aria-live="polite"><strong>' + done + ' dari ' + a.lines.length + '</strong> kalimat sudah dibaca' + (cnt ? ' · rata-rata terbaik <strong>' + Math.round(sum / cnt) + '%</strong>' : '') + '</p>';
+    const info = '<div class="note rd-info"><strong>Cara kerjanya:</strong> dengarkan contoh, tekan <b>Rekam</b>, lalu baca satu kalimat. Browser mengubah suaramu menjadi teks, dan kata yang tidak cocok diberi tanda. Hasilnya <strong>perkiraan</strong>, bukan penilaian guru. Suaramu dikirim ke layanan pengenalan suara milik browser (di Chrome: Google). Kami tidak menyimpan rekamanmu, hanya skor di browser ini.</div>';
+    const warn = sup ? '' : '<div class="note rd-warn"><strong>Browser ini belum mendukung pengenalan suara.</strong> Buka di Chrome, Edge, atau Safari untuk koreksi otomatis. Untuk sekarang, dengarkan contoh, baca keras-keras, lalu tekan <b>Sudah kubaca</b>.</div>';
+    const items = a.lines.map((ln, i) => {
+      const res = RD.res[i]; const best = reads[i] && typeof reads[i].best === 'number' ? reads[i].best : null;
+      const active = RD.active && RD.active.i === i;
+      const words = (res ? res.tokens : rdTokens(ln[0])).map((tk, k) => '<span class="rd-w' + rdWordCls(tk) + '">' + esc(tk.t) + (tk.st && tk.st !== 'ok' && tk.st !== 'skip' ? '<span class="sr-only"> (' + (tk.st === 'near' ? 'hampir' : 'kurang jelas') + ')</span>' : '') + '</span>').join(' ');
+      let ctl = '<div class="rd-ctl">' + sayBtn(ln[0]) + '<button type="button" class="rd-slow" data-act="rdSlow" data-text="' + esc(ln[0]) + '" aria-label="Dengarkan pelan"><span aria-hidden="true">🐢</span> Pelan</button>';
+      if (sup) ctl += active && RD.active.k === undefined
+        ? '<button type="button" class="rd-rec on" data-act="rdStop" aria-pressed="true">' + STOP(18) + ' Berhenti</button>'
+        : '<button type="button" class="rd-rec" data-act="rdRec" data-i="' + i + '" aria-pressed="false">' + MIC(18) + ((res && res.score !== null) || best !== null ? ' Rekam lagi' : ' Rekam') + '</button>';
+      else ctl += '<button type="button" class="rd-rec manual' + (reads[i] ? ' done' : '') + '" data-act="rdManual" data-i="' + i + '" aria-pressed="' + (reads[i] ? 'true' : 'false') + '">' + (reads[i] ? '✓ Sudah kubaca' : 'Sudah kubaca') + '</button>';
+      ctl += '</div>';
+      let status = '';
+      if (active) status = '<p class="rd-status listening" role="status">' + (RD.active.k === undefined ? 'Mendengarkan… baca kalimat di atas.' : 'Mendengarkan… ucapkan kata yang dicoba.') + '</p>';
+      else if (RD.msg[i]) status = '<p class="rd-status err" role="status">' + esc(RD.msg[i]) + '</p>';
+      let result = '';
+      if (res && res.score !== null && !active) {
+        const lv = rdLevel(res.score);
+        const probs = res.tokens.map((tk, k) => ({ tk: tk, k: k })).filter((x) => x.tk.st && x.tk.st !== 'ok' && x.tk.st !== 'skip');
+        result = '<div class="rd-result ' + lv[0] + '"><p class="rd-score"><b>' + res.score + '%</b> ' + esc(lv[1]) + '</p>' +
+          '<p class="rd-heard">Yang terdengar: <i>“' + esc(res.heardText || '…') + '”</i></p>' +
+          (probs.length ? '<ul class="rd-fix">' + probs.map((x) => {
+            const w = x.tk.t.replace(/[.,!?;:"“”]/g, '');
+            const detail = x.tk.st === 'miss' ? 'tidak terdengar' : 'terdengar: “' + esc(x.tk.heard) + '”';
+            const wordOn = RD.active && RD.active.i === i && RD.active.k === x.k;
+            return '<li><span class="rd-fw"><b>' + esc(w) + '</b> <span class="muted">' + detail + '</span></span><span class="rd-fb">' + sayBtn(w) +
+              '<button type="button" class="rd-slow" data-act="rdSlow" data-text="' + esc(w) + '" aria-label="Dengarkan pelan: ' + esc(w) + '"><span aria-hidden="true">🐢</span></button>' +
+              (wordOn ? '<button type="button" class="rd-rec on small" data-act="rdStop">' + STOP(16) + ' Berhenti</button>' : '<button type="button" class="rd-rec small" data-act="rdRecWord" data-i="' + i + '" data-k="' + x.k + '">' + MIC(16) + ' Coba kata ini</button>') + '</span></li>';
+          }).join('') + '</ul>' : '') + '</div>';
+      } else if (!res && best !== null && !active) {
+        result = '<p class="rd-best">Skor terbaikmu: <b>' + best + '%</b></p>';
+      }
+      let ask = '';
+      if (RD.ask && RD.ask.i === i) ask = '<div class="rd-ask" role="alertdialog" aria-label="Izin merekam"><p><strong>Sebelum merekam:</strong> suaramu dikirim ke layanan pengenalan suara milik browser (di Chrome: Google) untuk diubah menjadi teks. Kami tidak menyimpan rekamanmu. Kalau kamu belum 18 tahun, minta izin orang tua atau gurumu dulu.</p><div class="btn-row"><button type="button" class="btn btn-primary btn-small" data-act="rdAck">Mengerti, mulai rekam</button><button type="button" class="btn btn-small btn-flat" data-act="rdAckNo">Batal</button></div></div>';
+      return '<li class="rd-item' + (active ? ' active' : '') + '"><p class="rd-n">Kalimat ' + (i + 1) + ' dari ' + a.lines.length + '</p><p class="rd-text">' + words + '</p><p class="rd-id muted">' + esc(ln[1]) + '</p>' + ctl + ask + status + result + '</li>';
+    }).join('');
+    return sumLine + warn + '<ol class="rd-list">' + items + '</ol>' + info;
+  }
+  function rdRender() {
+    const root = document.getElementById('rd-root');
+    if (!root || !P) return;
+    const y = window.scrollY;
+    root.innerHTML = rdHTML(lessonById(P.id));
+    window.scrollTo(0, y);
+    try { if (typeof refreshAudioUI === 'function') refreshAudioUI(); } catch (e) { /* abaikan */ }
+  }
+
+  const helpBox = (t) => '<div class="help-box"><span class="help-label">Cara kami membantu</span><p>' + t + '</p></div>';
+
+  /* ---------- halaman: laporan hasil belajar ---------- */
+  const pctOf = (sc) => (sc && sc.total ? Math.round((sc.right / sc.total) * 100) : null);
+  const levelOf = (pc) => (pc >= 80 ? ['good', 'Kuat'] : pc >= 60 ? ['mid', 'Cukup'] : ['low', 'Perlu diulang']);
+  function scoreBlock(label, sc) {
+    if (!sc) return '<div class="rp-score"><div class="rp-score-top"><strong>' + label + '</strong><span class="muted">Belum dikerjakan</span></div><div class="rp-bar" aria-hidden="true"><span style="width:0"></span></div></div>';
+    const pc = pctOf(sc); const lv = levelOf(pc);
+    const more = sc.attempts > 1 ? ' · ' + sc.attempts + ' percobaan, terbaik ' + Math.min(sc.best || sc.right, sc.total) + ' dari ' + sc.total : '';
+    return '<div class="rp-score"><div class="rp-score-top"><strong>' + label + '</strong><span>' + sc.right + ' dari ' + sc.total + ' benar <b class="rp-pct ' + lv[0] + '">' + pc + '%</b></span></div>' +
+      '<div class="rp-bar ' + lv[0] + '" role="img" aria-label="' + label + ': ' + pc + ' persen, ' + lv[1] + '"><span style="width:' + pc + '%"></span></div><p class="rp-note">' + lv[1] + more + '</p></div>';
+  }
+  function lessonReport(l) {
+    const p = prog(l.id); const lock = gate(l);
+    const started = Object.keys(p.stepsDone).length > 0;
+    const sl = p.scores.latihan || null; const su = p.scores.ulas || null;
+    const rights = (sl ? sl.right : 0) + (su ? su.right : 0); const totals = (sl ? sl.total : 0) + (su ? su.total : 0);
+    const avg = totals ? Math.round((rights / totals) * 100) : null;
+    const reads = (p.apply && p.apply.reads) || {};
+    const readN = Object.keys(reads).length; const scored = Object.keys(reads).filter((k) => typeof reads[k].best === 'number').map((k) => reads[k].best);
+    const readAvg = scored.length ? Math.round(scored.reduce((x, y) => x + y, 0) / scored.length) : null;
+    const chip = p.done ? '<span class="chip chip-mint">Selesai</span>' : (started ? '<span class="chip chip-lav">Sedang dikerjakan</span>' : (lock ? '<span class="chip">Terkunci</span>' : '<span class="chip">Belum dimulai</span>'));
+    let tip;
+    if (avg === null) tip = started ? 'Selesaikan Latihan dan Ulas supaya nilainya muncul di sini.' : (lock ? 'Pelajaran ini terbuka setelah kamu memiliki course premium.' : 'Belum dimulai. Mulai dari langkah Pelajari.');
+    else if (avg >= 80) tip = 'Pemahamannya sudah kuat. Siap lanjut ke pelajaran berikutnya.';
+    else if (avg >= 60) tip = 'Cukup baik. Baca ulang langkah Pahami, lalu ulangi Ulas untuk menaikkan nilai.';
+    else tip = 'Masih perlu diulang. Buka lagi langkah Pelajari dan Pahami, lalu coba Latihan lagi.';
+    const steps = STEPS.map((st) => '<li class="' + (p.stepsDone[st.key] ? 'done' : '') + '"><span aria-hidden="true">' + (p.stepsDone[st.key] ? '✓' : '○') + '</span> ' + st.label + '<span class="sr-only">' + (p.stepsDone[st.key] ? ', selesai' : ', belum') + '</span></li>').join('');
+    const write = readN ? 'Sudah membaca <strong>' + readN + ' dari ' + l.apply.lines.length + ' kalimat</strong> dengan suara' + (readAvg !== null ? ', rata-rata terbaik <strong>' + readAvg + '%</strong> (perkiraan pengenal suara).' : '.') : 'Belum membaca dengan suara.';
+    const links = lock ? '' : '<div class="btn-row no-print"><a class="btn btn-small" href="#pelajaran-' + l.id + '-' + (started ? stepFirstUndone(l) : 'pelajari') + '">' + (p.done ? 'Buka pelajaran' : (started ? 'Lanjutkan' : 'Mulai')) + '</a>' +
+      (sl ? '<a class="btn btn-small btn-flat" href="#pelajaran-' + l.id + '-latihan">Ulangi Latihan</a>' : '') + (su ? '<a class="btn btn-small btn-flat" href="#pelajaran-' + l.id + '-ulas">Ulangi Ulas</a>' : '') + '</div>';
+    return '<section class="card rp-lesson stack" aria-labelledby="rp-' + l.id + '"><div class="rp-head"><div><p class="rp-no">Pelajaran ' + l.no + '</p><h2 id="rp-' + l.id + '">' + esc(l.title) + '</h2></div>' + chip + '</div>' +
+      '<ol class="rp-steps" aria-label="Langkah belajar">' + steps + '</ol>' +
+      '<div class="rp-scores">' + scoreBlock('Latihan', sl) + scoreBlock('Ulas', su) + '</div>' +
+      '<p class="rp-write"><strong>Praktikkan:</strong> ' + write + '</p><p class="rp-tip">' + tip + '</p>' + links + '</section>';
+  }
+  function reportView() {
+    const u = user();
+    const all = LESSONS.map((l) => prog(l.id));
+    let right = 0; let total = 0;
+    all.forEach((p) => ['latihan', 'ulas'].forEach((k) => { if (p.scores[k]) { right += p.scores[k].right; total += p.scores[k].total; } }));
+    const avg = total ? Math.round((right / total) * 100) : null;
+    let readSent = 0; let readAll = 0;
+    LESSONS.forEach((l, x) => { readAll += l.apply.lines.length; readSent += Object.keys((all[x].apply && all[x].apply.reads) || {}).length; });
+    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const tile = (n, lab) => '<div class="rp-tile"><strong>' + n + '</strong><span>' + lab + '</span></div>';
+    return header(['laporan']) + '<main id="main" class="page narrow"><div class="stack" style="gap:6px"><h1 id="main-title" tabindex="-1">Laporan hasil belajar</h1>' +
+      '<p class="muted">' + esc(u.name) + ' · ' + esc(COURSE.title) + ' · diperbarui ' + today + '</p></div>' +
+      '<div class="rp-tiles">' + tile(doneCount() + ' dari ' + LESSONS.length, 'pelajaran selesai') + tile(avg === null ? '–' : avg + '%', 'nilai rata-rata Latihan dan Ulas') + tile(total ? right + ' dari ' + total : '–', 'soal dijawab benar') + tile(readSent + ' dari ' + readAll, 'kalimat sudah dibaca dengan suara') + '</div>' +
+      '<div class="btn-row no-print"><button type="button" class="btn btn-primary" data-act="printReport">Cetak atau simpan PDF</button><a class="btn" href="#dashboard">Kembali ke beranda</a></div>' +
+      LESSONS.map(lessonReport).join('') +
+      '<p class="muted rp-foot">Nilai diambil dari percobaan terakhir. Data tersimpan di browser ini saja.</p></main>' + FOOT;
   }
 
   /* ---------- halaman: data saya, beli ---------- */
@@ -1291,6 +1536,7 @@
   }
   let pendingScroll = null;
   function render(opts) {
+    if (RD.rec || RD.ask) { rdAbort(); RD.ask = null; }
     opts = opts || {};
     const y = window.scrollY;
     const r = parseRoute();
@@ -1300,6 +1546,7 @@
     else if (p[0] === 'masuk') { html = authView(r.query); title = 'Masuk | Yang Penting Inggris'; }
     else if (p[0] === 'dashboard') { if (!user()) { location.replace('#masuk'); return; } html = dashboard(); title = 'Beranda | Yang Penting Inggris'; }
     else if (p[0] === 'pelajaran') { html = lessonView(p[1], p[2]); const l = lessonById(p[1]); if (l) title = l.title + ' | Yang Penting Inggris'; }
+    else if (p[0] === 'laporan') { if (!user()) { location.replace('#masuk'); return; } html = reportView(); title = 'Laporan hasil belajar | Yang Penting Inggris'; }
     else if (p[0] === 'data') { html = dataView(); title = 'Data saya | Yang Penting Inggris'; }
     else if (p[0] === 'beli') { html = buyView(); title = 'Beli course | Yang Penting Inggris'; }
     else { location.replace('#beranda'); return; }
@@ -1413,6 +1660,14 @@
     if (act === 'spell') { speakSpell(el.getAttribute('data-w'), el); return; }
     if (act === 'demo') { demoPick = Number(el.getAttribute('data-i')); render({ keepScroll: true }); return; }
     if (act === 'toggleSound') { DB.sound = !soundOn(); save(); if (soundOn()) sfx(true); render({ keepScroll: true }); toast(soundOn() ? 'Efek suara jawaban hidup.' : 'Efek suara jawaban mati.'); return; }
+    if (act === 'printReport') { try { window.print(); } catch (e) { toast('Cetak tidak tersedia di tampilan ini. Coba buka halaman ini langsung di browser.'); } return; }
+    if (act === 'rdRec') { rdStart(Number(el.getAttribute('data-i'))); return; }
+    if (act === 'rdRecWord') { rdStart(Number(el.getAttribute('data-i')), Number(el.getAttribute('data-k'))); return; }
+    if (act === 'rdStop') { if (RD.rec) { try { RD.rec.stop(); } catch (e) { rdAbort(); rdRender(); } } return; }
+    if (act === 'rdAck') { const q = RD.ask; DB.micAck = true; save(); RD.ask = null; if (q) rdStart(q.i, q.k); return; }
+    if (act === 'rdAckNo') { RD.ask = null; rdRender(); return; }
+    if (act === 'rdManual') { const i = Number(el.getAttribute('data-i')); const p = prog(P.id); if (!p.apply.reads) p.apply.reads = {}; if (p.apply.reads[i]) delete p.apply.reads[i]; else p.apply.reads[i] = { attempts: 0, best: null, manual: true }; save(); rdRender(); return; }
+    if (act === 'rdSlow') { const t = el.getAttribute('data-text'); speakClip(clipSlug(t), prepText(t), el, SLOW_RATE); return; }
     if (act === 'logout') { DB.session = null; save(); P = null; location.hash = '#beranda'; render(); return; }
     if (act === 'export') {
       try {
@@ -1501,7 +1756,8 @@
     if (act === 'finishEx') {
       const right = P.results.filter(Boolean).length;
       const p = prog(cx.lesson.id);
-      p.scores[cx.step.key] = { right: right, total: cx.exs.length };
+      const prev = p.scores[cx.step.key] || {};
+      p.scores[cx.step.key] = { right: right, total: cx.exs.length, attempts: (prev.attempts || 0) + 1, best: Math.max(prev.best || 0, right) };
       markStep(cx.lesson, cx.step.key);
       if (cx.step.key === 'ulas') { p.done = true; save(); P.complete = true; render(); }
       else goStep(cx.lesson, STEPS[STEPS.indexOf(cx.step) + 1].key);
