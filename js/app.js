@@ -5,6 +5,14 @@
 
   const COURSE = window.COURSE;
   const LESSONS = COURSE.lessons;
+  const GRAMMAR = window.GRAMMAR;
+  const GRAM_READY = GRAMMAR.lessons.filter((l) => !l.soon);
+  const COURSES = {
+    speaking: { key: 'speaking', hash: '#dashboard', course: COURSE, lessons: LESSONS, all: LESSONS, unit: 'Pelajaran' },
+    grammar: { key: 'grammar', hash: '#grammar', course: GRAMMAR, lessons: GRAM_READY, all: GRAMMAR.lessons, unit: 'Topik' }
+  };
+  const courseOf = (l) => (GRAM_READY.indexOf(l) >= 0 ? COURSES.grammar : COURSES.speaking);
+  const unitOf = (l) => courseOf(l).unit;
   const STEPS = [
     { key: 'pelajari', label: 'Pelajari', src: 'learn' },
     { key: 'pahami', label: 'Pahami', src: 'understand' },
@@ -58,16 +66,16 @@
     if (lesson.access === 'premium' && !DB.testMode) return 'premium';
     return null;
   }
-  function lessonById(id) { return LESSONS.find((l) => l.id === id); }
+  function lessonById(id) { return LESSONS.find((l) => l.id === id) || GRAM_READY.find((l) => l.id === id); }
   function stepFirstUndone(lesson) {
     const p = prog(lesson.id);
     const s = STEPS.find((x) => !p.stepsDone[x.key]);
     return s ? s.key : STEPS[0].key;
   }
-  function nextLesson() {
-    return LESSONS.find((l) => gate(l) === null && !prog(l.id).done) || null;
+  function nextLesson(c) {
+    return (c || COURSES.speaking).lessons.find((l) => gate(l) === null && !prog(l.id).done) || null;
   }
-  function doneCount() { return LESSONS.filter((l) => prog(l.id).done).length; }
+  function doneCount(c) { return (c || COURSES.speaking).lessons.filter((l) => prog(l.id).done).length; }
 
   /* ---------- util ---------- */
   const $ = (s, r) => (r || document).querySelector(s);
@@ -98,12 +106,14 @@
   function rich(t) {
     return esc(t == null ? '' : t)
       .replace(/\[\[ipa:([A-Za-z]+)\]\]/g, (m, w) => ipaSpan(w))
-      .replace(/\{\{(?:([gc])\|)?(.+?)\}\}/g, (m, c, x) => '<span class="kw' + (c ? ' ' + c : '') + '">' + x + '</span>')
+      .replace(/\{\{V\|([^|{}]+)\|([^|{}]+)\}\}/g, (m, a, b) => '<span class="r-v">' + a + '<span class="r-end">' + b + '</span></span>')
+      .replace(/\{\{([SVAJO])\|(.+?)\}\}/g, (m, c, x) => '<span class="r-' + c.toLowerCase() + '">' + x + '</span>')
+      .replace(/\{\{(?:([gce])\|)?(.+?)\}\}/g, (m, c, x) => (c === 'e' ? '<span class="sfx">' + x + '</span>' : '<span class="kw' + (c ? ' ' + c : '') + '">' + x + '</span>'))
       .replace(/\*\*(.+?)\*\*/g, '<strong class="k">$1</strong>')
       .replace(/==(.+?)==/g, '<mark class="hl">$1</mark>');
   }
   function plain(t) {
-    return String(t == null ? '' : t).replace(/\[\[ipa:[A-Za-z]+\]\]/g, '').replace(/\{\{(?:[gc]\|)?(.+?)\}\}/g, '$1').replace(/\*\*(.+?)\*\*/g, '$1').replace(/==(.+?)==/g, '$1');
+    return String(t == null ? '' : t).replace(/\[\[ipa:[A-Za-z]+\]\]/g, '').replace(/\{\{V\|([^|{}]+)\|([^|{}]+)\}\}/g, '$1$2').replace(/\{\{(?:[gceSVAJO]\|)?(.+?)\}\}/g, '$1').replace(/\*\*(.+?)\*\*/g, '$1').replace(/==(.+?)==/g, '$1');
   }
 
   /* tanda "sudah diputar": kunci tiap tombol suara disimpan di DB.played */
@@ -402,6 +412,7 @@
     return isTeaser(l) ? 'Topik spesial yang hanya terbuka untuk pemilik course. Penasaran isinya?' : l.summary;
   }
   function lessonRow(l, mode) {
+    if (l.soon) return '<div class="lesson-row dashed soon" aria-disabled="true"><span class="num" style="background:var(--lav)" aria-hidden="true">' + l.no + '</span><span class="grow"><strong>' + esc(l.title) + '</strong><span>' + esc(l.summary) + '</span></span><span class="chip">Segera hadir</span></div>';
     const g = gate(l);
     const p = prog(l.id);
     const cls = ['lesson-row'];
@@ -501,30 +512,32 @@
   }
 
   /* ---------- halaman: dashboard ---------- */
-  function dashboard() {
+  function dashboard(courseKey) {
+    const c = COURSES[courseKey] || COURSES.speaking;
     const u = user();
-    const nl = nextLesson();
+    const nl = nextLesson(c);
     const nextCard = nl
       ? (function () {
           const p = prog(nl.id);
           const doneN = Object.keys(p.stepsDone).length;
           const key = stepFirstUndone(nl);
           const st = STEPS.find((s) => s.key === key);
-          return '<section class="hero-card" aria-labelledby="lanjut"><p id="lanjut" style="font-weight:700;font-size:14px">Lanjutkan belajar</p><h2>Pelajaran ' + nl.no + ': ' + esc(nl.title) + '</h2>' +
+          return '<section class="hero-card" aria-labelledby="lanjut"><p id="lanjut" style="font-weight:700;font-size:14px">Lanjutkan belajar</p><h2>' + c.unit + ' ' + nl.no + ': ' + esc(nl.title) + '</h2>' +
             '<div class="bar" role="progressbar" aria-label="Kemajuan pelajaran" aria-valuenow="' + (doneN * 20) + '" aria-valuemin="0" aria-valuemax="100"><span style="width:' + (doneN * 20) + '%"></span></div>' +
             '<p style="font-size:15px">Langkah ' + (STEPS.indexOf(st) + 1) + ' dari 5: ' + st.label + '</p>' +
             '<a class="btn btn-primary" href="#pelajaran-' + nl.id + '-' + key + '">' + (doneN ? 'Lanjutkan' : 'Mulai') + '</a></section>';
         })()
-      : '<section class="hero-card"><h2>Semua pelajaran yang terbuka sudah selesai. Mantap!</h2><p>Pelajaran premium akan terbuka setelah kamu memiliki course-nya.</p></section>';
-    const locked = LESSONS.some((l) => gate(l) === 'premium');
+      : '<section class="hero-card"><h2>Semua ' + c.unit.toLowerCase() + ' yang tersedia sudah selesai. Mantap!</h2><p>' + (c.key === 'speaking' ? 'Pelajaran premium akan terbuka setelah kamu memiliki course-nya.' : 'Topik grammar berikutnya akan hadir segera.') + '</p></section>';
+    const locked = c.key === 'speaking' && LESSONS.some((l) => gate(l) === 'premium');
     const upsell = locked
       ? '<section class="card card-shadow stack" aria-labelledby="up"><h2 id="up" style="font-size:20px">Buka semua pelajaran</h2><p class="price" style="font-size:30px">' + PLACEHOLDER_PRICE + '</p><ul style="margin:0;padding-left:20px;font-size:15px"><li>Sekali bayar</li><li>Pelajaran premium di course ini</li><li>Akses selama ' + PLACEHOLDER_DURATION + '</li></ul><a class="btn btn-primary" href="#beli">Beli course</a></section>'
       : '';
     return header(['dashboard']) + '<main id="main" class="page"><div class="stack" style="gap:10px"><span class="chip chip-mint" style="align-self:flex-start">' + (DB.testMode ? 'Mode uji: pelajaran premium terbuka' : 'Akun gratis') + '</span>' +
       '<h1 id="main-title" tabindex="-1">Halo, ' + esc(u.name) + '! Siap lanjut belajar?</h1></div>' +
+      '<nav class="course-tabs" aria-label="Pilih course"><a href="#dashboard"' + (c.key === 'speaking' ? ' aria-current="page"' : '') + '>' + esc(COURSE.title) + '</a><a href="#grammar"' + (c.key === 'grammar' ? ' aria-current="page"' : '') + '>' + esc(GRAMMAR.title) + '</a></nav>' +
       '<div class="cols"><div class="main">' + nextCard +
-      '<section aria-labelledby="cm" class="stack"><div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px"><h2 id="cm" style="font-size:22px">' + esc(COURSE.title) + '</h2><span class="muted" style="font-size:15px">' + doneCount() + ' dari ' + LESSONS.length + ' pelajaran selesai</span></div>' +
-      '<div class="list">' + LESSONS.map((l) => lessonRow(l, 'app')).join('') + '</div></section></div>' +
+      '<section aria-labelledby="cm" class="stack"><div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px"><h2 id="cm" style="font-size:22px">' + esc(c.course.title) + '</h2><span class="muted" style="font-size:15px">' + doneCount(c) + ' dari ' + c.lessons.length + ' ' + c.unit.toLowerCase() + ' selesai' + (c.all.length > c.lessons.length ? ' · ' + (c.all.length - c.lessons.length) + ' segera hadir' : '') + '</span></div>' +
+      '<div class="list">' + c.all.map((l) => lessonRow(l, 'app')).join('') + '</div></section></div>' +
       '<aside class="side">' + upsell + '<section class="card" style="background:var(--lav-light)"><h2 style="font-size:17px;margin-bottom:6px">Laporan hasil belajar</h2><p class="muted" style="font-size:15px;margin-bottom:12px">Lihat nilai Latihan dan Ulas di setiap pelajaran, lalu cetak atau simpan sebagai PDF.</p><a class="btn btn-small btn-flat" href="#laporan">Buka laporan</a></section><section class="card" style="background:var(--lav-light)"><h2 style="font-size:17px;margin-bottom:6px">Data saya</h2><p class="muted" style="font-size:15px;margin-bottom:12px">Unduh cadangan kemajuan belajarmu, atau buka mode uji.</p><a class="btn btn-small btn-flat" href="#data">Buka Data saya</a></section></aside></div></main>' + FOOT;
   }
 
@@ -831,8 +844,57 @@
   }
 
   /* ---------- blok "Penjelasan dulu" ---------- */
+  function roleKeyHTML(b) {
+    const rows = [['s', 'Subject', 'pelaku, atau yang sedang dibicarakan'], ['v', 'Verb / Auxiliary verb', 'kata kerja dan kata bantu (do, does, is)'], ['o', 'Object', 'yang dikenai pekerjaan'], ['a', 'Adverb', 'keterangan: kapan, di mana, atau seberapa sering'], ['j', 'Adjective', 'kata sifat']];
+    return '<section class="card stack rk-sec"><h3 style="font-size:20px">' + esc(b.title || 'Kunci warna kalimat') + '</h3><ul class="rk-list">' +
+      rows.map((r) => '<li class="rk-' + r[0] + '"><span class="rk-name r-' + r[0] + '">' + r[1] + '</span><span class="rk-mean">' + r[2] + '</span></li>').join('') + '</ul>' +
+      (b.example ? '<p class="rk-ex">' + rich(b.example) + '</p>' : '') + (b.note ? '<p class="rk-note">' + rich(b.note) + '</p>' : '') + '</section>';
+  }
+  function keyHTML(b) {
+    return '<div class="key-box"><span class="key-label">' + esc(b.label || 'Inti materi') + '</span><p>' + rich(b.text) + '</p></div>';
+  }
+  function formulaHTML(b) {
+    const legend = '<p class="fm-legend"><span class="fm-chip s">Subject</span><span class="fm-chip v">Verb / Auxiliary</span><span class="fm-chip x">Akhiran s / es</span></p>';
+    const rows = (b.rows || []).map((r) => '<div class="fm-row"><span class="fm-label">' + esc(r.label) + '</span><div class="fm-line">' +
+      r.parts.map((q, i) => (i ? '<span class="fm-plus" aria-hidden="true">+</span>' : '') + '<span class="fm-chip ' + q[1] + '">' + rich(q[0]) + '</span>').join('') + '</div>' +
+      (r.ex ? '<div class="fm-ex">' + sayBtn(plain(r.ex)) + '<span>' + rich(r.ex) + '</span></div>' : '') + '</div>').join('');
+    return '<section class="card stack fm-sec"><h3 style="font-size:20px">' + esc(b.title) + '</h3>' + legend + rows + '</section>';
+  }
+  function fmlChips(t) {
+    const parts = String(t).split(' + ');
+    const KIND = { S: 's', V: 'v', A: 'adv', J: 'adj', O: 'obj', e: 'x' };
+    const out = [];
+    let q = '';
+    for (let i = 0; i < parts.length; i++) {
+      let x = parts[i].trim();
+      if (i === parts.length - 1 && /\?$/.test(x)) { q = '?'; x = x.slice(0, -1); }
+      const m = /^\{\{([SVOAJe])\|([^{}]+)\}\}$/.exec(x);
+      if (!m) return '';
+      out.push('<span class="fm-chip ' + KIND[m[1]] + '">' + esc(m[2]) + '</span>');
+    }
+    return '<div class="ent-fml"><b class="fm-label">Rumus</b><div class="fm-line">' + out.join('<span class="fm-plus" aria-hidden="true">+</span>') + (q ? '<span class="fm-plus" aria-hidden="true">?</span>' : '') + '</div></div>';
+  }
+  function spellHTML(rules) {
+    return '<div class="sp-grid">' + rules.map((r) => '<div class="sp tone-' + r.tone + '"><div class="sp-badge">' + esc(r.badge) + '</div><div class="sp-body"><b class="sp-title">' + esc(r.title) + '</b>' +
+      (r.tags ? '<span class="sp-tags">' + r.tags.map((t) => '<span class="sp-tag">' + esc(t) + '</span>').join('') + '</span>' : '') +
+      (r.hint ? '<span class="sp-hint">' + rich(r.hint) + '</span>' : '') +
+      '<span class="sp-words">' + r.words.map((w) => '<span class="sp-w"><i>' + (w[3] ? esc(w[0].slice(0, -w[3].length)) + '<s>' + esc(w[3]) + '</s>' : esc(w[0])) + '</i><em aria-hidden="true">→</em><span class="sp-res">' + esc(w[1]) + '<u>' + esc(w[2]) + '</u></span></span>').join('') + '</span></div></div>').join('') + '</div>';
+  }
+  function svCards(b) {
+    const cards = b.rows.map((r) => {
+      const plus = /\{\{e\|/.test(r[1]);
+      return '<div class="sv' + (plus ? ' plus' : '') + '"><div class="sv-top"><span class="fm-chip s">' + rich(r[0]) + '</span><span class="fm-plus" aria-hidden="true">→</span><span class="fm-chip v">' + rich(r[1]) + '</span></div>' +
+        '<div class="fm-ex">' + sayBtn(plain(r[2])) + '<span>' + rich(r[2]) + '</span></div></div>';
+    }).join('');
+    return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3><div class="sv-grid">' + cards + '</div></section>';
+  }
+  function wordChips(b) {
+    return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3><div class="tw-grid">' +
+      b.rows.map((r) => '<div class="tw">' + sayBtn(plain(r[0]), 'inline') + '<div><span class="fm-chip adv">' + rich(r[0]) + '</span><span class="tw-id">' + esc(r[1]) + '</span></div></div>').join('') + '</div></section>';
+  }
   function explainHTML(b) {
-    const pts = (b.points || []).map((x) => '<div class="xp"><span class="xp-ico" aria-hidden="true">' + x.icon + '</span><b>' + esc(x.title) + '</b><p>' + esc(x.text) + '</p></div>').join('');
+    const pts = (b.points || []).map((x) => '<div class="xp' + (x.tone ? ' tone-' + x.tone : '') + '"><span class="xp-ico" aria-hidden="true">' + x.icon + '</span><b>' + esc(x.title) + '</b><p>' + rich(x.text) + '</p>' +
+      (x.ex ? '<div class="xp-ex"><span>' + rich(x.ex) + '</span></div>' : '') + '</div>').join('');
     return '<section class="card stack xp-sec"><div class="xp-top"><span class="xp-badge">Penjelasan dulu</span><h3>' + esc(b.title) + '</h3></div>' +
       (b.lead ? '<p class="xp-lead">' + b.lead + '</p>' : '') +
       '<div class="xp-grid' + (b.flow ? ' flow' : '') + ' n' + (b.points || []).length + '">' + pts + '</div>' +
@@ -977,17 +1039,28 @@
   function blocks(list, kp) {
     return list.map((b, bi) => {
       const bkey = kp + ':' + bi;
+      if (b.t === 'text' && b.g) return '<div class="intro-g"><span class="xp-badge">Yuk mulai</span><p>' + b.html + '</p></div>';
       if (b.t === 'text') return '<p>' + b.html + '</p>';
       if (b.t === 'note') return '<div class="note">' + b.html + '</div>';
       if (b.t === 'phrases') {
+        const pg = b.g && /^([A-Z])\.\s*(.+)$/.exec(b.title);
+        if (pg) {
+          return '<section class="card stack ph-g tone-' + b.g + '"><div class="ph-head"><span class="ph-letter">' + pg[1] + '</span><h3>' + esc(pg[2]) + '</h3></div><ul class="phr">' +
+            b.items.map((it) => '<li>' + sayBtn(plain(it[0])) + '<div><span class="en">' + rich(it[0]) + '</span><span class="id">' + esc(it[1]) + '</span></div></li>').join('') + '</ul></section>';
+        }
         return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3><ul class="phr">' +
-          b.items.map((it) => '<li>' + sayBtn(it[0]) + '<div><span class="en">' + esc(it[0]) + '</span><span class="id">' + esc(it[1]) + '</span></div></li>').join('') + '</ul></section>';
+          b.items.map((it) => '<li>' + sayBtn(plain(it[0])) + '<div><span class="en">' + rich(it[0]) + '</span><span class="id">' + esc(it[1]) + '</span></div></li>').join('') + '</ul></section>';
       }
+      if (b.t === 'table' && b.g) return svCards(b);
+      if (b.t === 'table' && b.adv) return wordChips(b);
       if (b.t === 'table' && b.flags) return duoTable(b);
       if (b.t === 'duonote') return duoNote(b);
       if (b.t === 'table') return tableSection(b, bkey);
       if (b.t === 'miniquiz') return mqHTML(bkey, b);
       if (b.t === 'explain') return explainHTML(b);
+      if (b.t === 'key') return keyHTML(b);
+      if (b.t === 'rolekey') return roleKeyHTML(b);
+      if (b.t === 'formula') return formulaHTML(b);
       if (b.t === 'reveal') return revealHTML(b, bkey);
       if (b.t === 'clock') return clockSection(b, bkey);
       if (b.t === 'figure') return '<figure class="card stack fig"><h3 style="font-size:20px">' + esc(b.title) + '</h3><div class="fig-box">' + b.svg + '</div>' + (b.caption ? '<figcaption class="muted">' + b.caption + '</figcaption>' : '') + '</figure>';
@@ -1008,11 +1081,12 @@
       }
       if (b.t === 'entries') {
         return '<section class="card stack"><h3 style="font-size:20px">' + esc(b.title) + '</h3>' + b.items.map((it) => {
+          const gnum = b.g && it.title && /^(\d+)\.\s*(.+)$/.exec(it.title);
           const head = it.title
-            ? '<div class="ent-head"><div><span class="en">' + esc(it.title) + '</span><span class="sub">' + rich(it.id) + '</span></div></div>'
+            ? (gnum ? '<div class="ent-head g"><span class="ent-num">' + gnum[1] + '</span><div><span class="en">' + esc(gnum[2]) + '</span><span class="sub">' + rich(it.id) + '</span></div></div>' : '<div class="ent-head"><div><span class="en">' + esc(it.title) + '</span><span class="sub">' + rich(it.id) + '</span></div></div>')
             : '<div class="ent-head">' + sayBtn(it.en) + '<div><span class="en">' + esc(it.en) + '</span><span class="id">' + esc(it.id) + '</span></div></div>';
-          const rows = it.rows || [['Dipakai saat', it.when], ['Jawaban', it.reply]];
-          return '<div class="ent">' + head + rows.map((r) => r[0] === 'Rumus' ? '<p class="ent-row formula"><b>Rumus</b><span class="fml">' + String(r[1]).split('  |  ').map(rich).join('<br>') + '</span></p>' : '<p class="ent-row"><b>' + esc(r[0]) + '</b>' + rich(r[1]) + '</p>').join('') +
+          const rows = it.spell ? [] : (it.rows || [['Dipakai saat', it.when], ['Jawaban', it.reply]]);
+          return '<div class="ent' + (gnum ? ' g' + gnum[1] : '') + '">' + head + (it.spell ? spellHTML(it.spell) : '') + rows.map((r) => gnum && r[0] === 'Rumus' && fmlChips(r[1]) ? fmlChips(r[1]) : gnum && r[0] === 'Penjelasan' ? '<div class="ent-tip"><span class="ent-tip-ico" aria-hidden="true">💡</span><p>' + rich(r[1]) + '</p></div>' : r[0] === 'Rumus' ? '<p class="ent-row formula"><b>Rumus</b><span class="fml">' + String(r[1]).split('  |  ').map(rich).join('<br>') + '</span></p>' : '<p class="ent-row"><b>' + esc(r[0]) + '</b>' + rich(r[1]) + '</p>').join('') +
             '<p class="ent-row"><b>' + (it.flip ? 'Tebak dulu' : 'Contoh kalimat') + '</b>' + (it.flip ? '<span class="flip-hint">Lihat jamnya, ucapkan dalam bahasa Inggris, lalu ketuk baris atau tombol suara untuk mengecek.</span>' : '') + '</p><ul class="ent-ex">' + it.ex.map((x) => flipEx(it, x) || '<li>' + sayBtn(plain(x[0]), 'inline') + '<div><span class="en2">' + rich(x[0]) + '</span><span class="id">' + rich(x[1]) + '</span></div></li>').join('') + '</ul></div>';
         }).join('') + '</section>';
       }
@@ -1067,13 +1141,13 @@
   function lockedView(lesson, why) {
     const title = lessonTitle(lesson);
     if (why === 'login') {
-      return header(['pelajaran']) + '<main id="main" class="page narrow"><div class="card card-shadow stack lock-card"><h1 id="main-title" tabindex="-1" style="font-size:26px">Pelajaran ' + lesson.no + ': ' + esc(title) + '</h1>' +
+      return header(['pelajaran']) + '<main id="main" class="page narrow"><div class="card card-shadow stack lock-card"><h1 id="main-title" tabindex="-1" style="font-size:26px">' + unitOf(lesson) + ' ' + lesson.no + ': ' + esc(title) + '</h1>' +
         '<p>Pelajaran ini gratis, tapi butuh akun supaya kemajuanmu tersimpan.</p><div class="btn-row" style="justify-content:center"><a class="btn btn-primary" href="#masuk-' + lesson.id + '">Buat akun gratis</a><a class="btn" href="#beranda">Kembali</a></div></div></main>' + FOOT;
     }
     return header(['pelajaran']) + '<main id="main" class="page narrow"><div class="card card-shadow stack lock-card"><span class="chip chip-yellow">' + ICON.lock(14) + 'Premium</span>' +
-      '<h1 id="main-title" tabindex="-1" style="font-size:26px">Pelajaran ' + lesson.no + ': ' + esc(title) + '</h1>' +
+      '<h1 id="main-title" tabindex="-1" style="font-size:26px">' + unitOf(lesson) + ' ' + lesson.no + ': ' + esc(title) + '</h1>' +
       '<p>Pelajaran ini bagian dari course premium. Harga: <strong>' + PLACEHOLDER_PRICE + '</strong> sekali bayar.</p>' +
-      '<div class="btn-row" style="justify-content:center"><a class="btn btn-primary" href="#beli">Beli course</a><a class="btn" href="#dashboard">Kembali ke daftar pelajaran</a></div>' +
+      '<div class="btn-row" style="justify-content:center"><a class="btn btn-primary" href="#beli">Beli course</a><a class="btn" href="' + courseOf(lesson).hash + '">Kembali ke daftar pelajaran</a></div>' +
       '<p class="notice">Hanya untuk pengujian di komputer ini: kamu bisa membuka semua pelajaran premium lewat <a href="#data" style="text-decoration:underline">Data saya</a>.</p></div></main>' + FOOT;
   }
 
@@ -1099,6 +1173,14 @@
     const L = String(word).toUpperCase().split('').filter((c) => LETTER_SOUND[c]);
     return 'Kata <strong>' + esc(String(word).toLowerCase()) + '</strong>: ' + L.join(' - ') + ', dibaca ' + ipaSpan(word) + '.';
   }
+  function qLabel(n, part) {
+    return '<p class="q-label"><span class="q-no">Soal ' + (P.exIdx + 1) + ' dari ' + n + '</span>' + (part ? '<span class="q-sep"> · </span><span class="q-part">' + esc(part) + '</span>' : '') + '</p>';
+  }
+  function exDots(n) {
+    let d = '';
+    for (let i = 0; i < n; i++) d += '<i class="' + (i < P.exIdx ? 'done' : (i === P.exIdx ? 'now' : '')) + '"></i>';
+    return '<div class="ex-dots" aria-hidden="true">' + d + '</div>';
+  }
   function fillsetView(lesson, src, ex) {
     const n = lesson[src].length;
     const fs = fsState(P.exIdx);
@@ -1121,7 +1203,7 @@
     const lastQ = P.exIdx === n - 1;
     const nav = '<div class="ex-nav"><button type="button" class="btn" data-act="prevEx"' + (P.exIdx === 0 ? ' disabled' : '') + ' aria-label="Soal sebelumnya">' + ICON.back(18) + ' Kembali</button>' +
       '<button type="button" class="btn' + (allDone ? ' btn-primary' : '') + '" data-act="nextEx" aria-label="' + (lastQ ? 'Lihat hasil' : 'Soal berikutnya') + '">' + (lastQ ? 'Lihat hasil' : 'Lanjut') + ' ' + ICON.next(18) + '</button></div>';
-    return '<section class="card card-shadow stack' + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext"><p class="q-label">Soal ' + (P.exIdx + 1) + ' dari ' + n + (ex.part ? ' · ' + esc(ex.part) : '') + '</p><p id="qtext" class="q-text">' + esc(ex.q) + '</p>' +
+    return '<section class="card card-shadow stack ext' + (P.exIdx % 4) + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext">' + exDots(n) + qLabel(n, ex.part) + '<p id="qtext" class="q-text">' + esc(ex.q) + '</p>' +
       (ex.listen ? accentToggle() : '') + '<p class="fs-prog" aria-live="polite">Terjawab ' + answeredN + ' dari ' + total + (ex.listen ? ' kata' : ' kalimat') + '</p><ol class="fs-list">' + items + '</ol>' + nav + '</section>';
   }
 
@@ -1177,7 +1259,7 @@
     const lastQ = P.exIdx === n - 1;
     fb += '<div class="ex-nav"><button type="button" class="btn" data-act="prevEx"' + (P.exIdx === 0 ? ' disabled' : '') + ' aria-label="Soal sebelumnya">' + ICON.back(18) + ' Kembali</button>' +
       '<button type="button" class="btn' + (answered ? ' btn-primary' : '') + '" data-act="nextEx" aria-label="' + (lastQ ? 'Lihat hasil' : 'Soal berikutnya') + '">' + (lastQ ? 'Lihat hasil' : 'Lanjut') + ' ' + ICON.next(18) + '</button></div>';
-    return '<section class="card card-shadow stack' + (ex.type === 'mc' ? ' exq' : '') + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext"><p class="q-label">Soal ' + (P.exIdx + 1) + ' dari ' + n + (ex.part ? ' · ' + esc(ex.part) : '') + '</p><p id="qtext" class="q-text">' + esc(ex.q) + '</p>' + (ex.say ? '<p class="ex-listen">' + sayX(ex.say) + '<span class="muted">Putar kalimatnya</span></p>' : '') +
+    return '<section class="card card-shadow stack ext' + (P.exIdx % 4) + (ex.type === 'mc' ? ' exq' : '') + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext">' + exDots(n) + qLabel(n, ex.part) + '<p id="qtext" class="q-text">' + esc(ex.q) + '</p>' + (ex.say ? '<p class="ex-listen">' + sayX(ex.say) + '<span class="muted">Putar kalimatnya</span></p>' : '') +
       (ex.spell ? accentToggle() + listenRow(ex.spell) : '') + body + fb + '</section>';
   }
 
@@ -1186,28 +1268,29 @@
     const total = lesson[step.src].length;
     const good = right / total >= 0.8;
     const isLast = step.key === 'ulas';
-    return '<section class="card card-shadow stack" aria-labelledby="hasil"><h2 id="hasil" style="font-size:22px">Hasil ' + step.label.toLowerCase() + '</h2><p class="score">' + right + ' dari ' + total + '</p>' +
+    return '<section class="card card-shadow stack sum-g" aria-labelledby="hasil"><h2 id="hasil" style="font-size:22px">Hasil ' + step.label.toLowerCase() + '</h2><p class="score">' + right + ' dari ' + total + '</p>' +
       '<p>' + (good ? 'Mantap! Kamu sudah menguasai bagian ini.' : 'Bagus, kamu sudah mencoba. Ulangi sekali lagi supaya makin lancar, atau lanjut kalau sudah merasa cukup.') + '</p>' +
       '<div class="btn-row"><button type="button" class="btn" data-act="redo">Ulangi dari awal</button><button type="button" class="btn btn-primary" data-act="finishEx">' + (isLast ? 'Selesaikan pelajaran' : 'Lanjut: ' + STEPS[STEPS.indexOf(step) + 1].label) + '</button></div></section>';
   }
 
   function completeView(lesson) {
     const p = prog(lesson.id);
-    const idx = LESSONS.indexOf(lesson);
-    const nextL = LESSONS[idx + 1];
+    const cc = courseOf(lesson);
+    const idx = cc.lessons.indexOf(lesson);
+    const nextL = cc.lessons[idx + 1];
     const sc = p.scores || {};
     const u = user();
     let nextBtn = '';
     if (nextL) {
       const g = gate(nextL);
-      if (!g) nextBtn = '<a class="btn btn-primary" href="#pelajaran-' + nextL.id + '">Lanjut ke pelajaran ' + nextL.no + '</a>';
+      if (!g) nextBtn = '<a class="btn btn-primary" href="#pelajaran-' + nextL.id + '">Lanjut ke ' + cc.unit.toLowerCase() + ' ' + nextL.no + '</a>';
       else if (g === 'login') nextBtn = '<a class="btn btn-primary" href="#masuk-' + nextL.id + '">Buat akun gratis untuk lanjut</a>';
       else nextBtn = '<a class="btn btn-primary" href="#beli">Buka pelajaran berikutnya</a>';
     }
-    return '<section class="card card-shadow stack lock-card"><h2 id="main-title" tabindex="-1" style="font-size:28px">Pelajaran ' + lesson.no + ' selesai!</h2>' +
+    return '<section class="card card-shadow stack lock-card"><h2 id="main-title" tabindex="-1" style="font-size:28px">' + cc.unit + ' ' + lesson.no + ' selesai!</h2>' +
       '<p>Nilai latihan: <strong>' + (sc.latihan ? sc.latihan.right + ' dari ' + sc.latihan.total : '-') + '</strong>. Nilai ulas: <strong>' + (sc.ulas ? sc.ulas.right + ' dari ' + sc.ulas.total : '-') + '</strong>.</p>' +
       (u ? '' : '<p class="notice">Kemajuanmu belum tersimpan karena belum masuk. Buat akun gratis supaya tersimpan di komputer ini.</p>') +
-      '<div class="btn-row" style="justify-content:center">' + nextBtn + (u ? '<a class="btn" href="#dashboard">Kembali ke daftar pelajaran</a>' : '<a class="btn" href="#masuk">Buat akun gratis</a>') + '</div></section>';
+      '<div class="btn-row" style="justify-content:center">' + nextBtn + (u ? '<a class="btn" href="' + cc.hash + '">Kembali ke daftar pelajaran</a>' : '<a class="btn" href="#masuk">Buat akun gratis</a>') + '</div></section>';
   }
 
   function lessonView(id, keyParam) {
@@ -1238,7 +1321,7 @@
         : '<span class="step-arrow off" role="img" aria-label="' + lab + ' belum tersedia">' + ico + '</span>';
     };
     const stepRow = '<div class="step-row">' + arrow('prev', si - 1) + '<p class="step-label">Langkah ' + (si + 1) + ' dari 5: <strong>' + step.label + '</strong></p>' + arrow('next', si + 1) + '</div>';
-    const head = '<div class="lesson-head"><a class="back" href="' + (user() ? '#dashboard' : '#beranda') + '" aria-label="Kembali ke daftar pelajaran">' + ICON.back(22) + '</a><div><p class="muted" style="font-size:14px">Pelajaran ' + lesson.no + '</p><h1 id="main-title" tabindex="-1" style="font-size:22px">' + esc(lesson.title) + '</h1></div><button type="button" class="sfx-btn" data-act="toggleSound" aria-pressed="' + (soundOn() ? 'true' : 'false') + '" aria-label="Efek suara jawaban: ' + (soundOn() ? 'hidup' : 'mati') + '" title="Efek suara jawaban">' + (soundOn() ? ICON.sound(20) : ICON.mute(20)) + '</button></div>' +
+    const head = '<div class="lesson-head"><a class="back" href="' + (user() ? courseOf(lesson).hash : '#beranda') + '" aria-label="Kembali ke daftar pelajaran">' + ICON.back(22) + '</a><div><p class="muted" style="font-size:14px">' + unitOf(lesson) + ' ' + lesson.no + '</p><h1 id="main-title" tabindex="-1" style="font-size:22px">' + esc(lesson.title) + '</h1></div><button type="button" class="sfx-btn" data-act="toggleSound" aria-pressed="' + (soundOn() ? 'true' : 'false') + '" aria-label="Efek suara jawaban: ' + (soundOn() ? 'hidup' : 'mati') + '" title="Efek suara jawaban">' + (soundOn() ? ICON.sound(20) : ICON.mute(20)) + '</button></div>' +
       seg + stepRow + '<div id="heard-bar" class="heard-bar" hidden></div><div id="audio-bar" class="audio-bar" hidden></div><div id="study-bar" class="study-bar" hidden></div>';
     let main = '';
     if (P.complete) {
@@ -1249,7 +1332,7 @@
       main = P.summary ? summaryView(lesson, step) : exView(lesson, step.src);
     } else if (step.src === 'apply') {
       const a = lesson.apply;
-      main = '<section class="card card-shadow stack" aria-labelledby="tugas"><h2 id="tugas" style="font-size:20px">Baca dengan suara</h2><p>' + esc(a.prompt) + '</p><div id="rd-root">' + rdHTML(lesson) + '</div></section>' + stepNav(si, STEPS[si + 1]);
+      main = '<section class="card card-shadow stack" aria-labelledby="tugas"><h2 id="tugas" style="font-size:20px">Baca dengan suara <span class="beta-tag">Percobaan</span></h2><p>' + esc(a.prompt) + '</p><p class="beta-note">Koreksi suara masih tahap percobaan dan hasilnya hanya perkiraan. Kalau suaramu tidak terbaca, coba lagi atau tandai sendiri bahwa kamu sudah membaca. Pelajaran tetap bisa kamu selesaikan.</p><div id="rd-root">' + rdHTML(lesson) + '</div></section>' + stepNav(si, STEPS[si + 1]);
     }
     return header(['pelajaran']) + '<main id="main" class="page narrow">' + head + main + '</main>' + FOOT;
   }
@@ -1386,7 +1469,11 @@
     r.onend = () => {
       clearTimeout(RD.timer);
       if (RD.rec === r) { RD.rec = null; RD.active = null; }
-      if (!got) RD.msg[i] = rdErrText(err) || 'Suaramu belum terbaca. Coba lagi.';
+      if (!got) {
+        const inFrame = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
+        const blocked = !err || err === 'not-allowed' || err === 'service-not-allowed';
+        RD.msg[i] = inFrame && blocked ? 'Halaman ini sedang ditampilkan di dalam pratinjau, dan pratinjau memblokir mikrofon. Fitur Rekam baru bisa dipakai kalau website dibuka langsung di Chrome.' : (rdErrText(err) || 'Suaramu belum terbaca. Coba lagi.');
+      }
       rdRender();
     };
     RD.rec = r; RD.active = { i: i, k: k }; RD.msg[i] = '';
@@ -1479,26 +1566,31 @@
     const write = readN ? 'Sudah membaca <strong>' + readN + ' dari ' + l.apply.lines.length + ' kalimat</strong> dengan suara' + (readAvg !== null ? ', rata-rata terbaik <strong>' + readAvg + '%</strong> (perkiraan pengenal suara).' : '.') : 'Belum membaca dengan suara.';
     const links = lock ? '' : '<div class="btn-row no-print"><a class="btn btn-small" href="#pelajaran-' + l.id + '-' + (started ? stepFirstUndone(l) : 'pelajari') + '">' + (p.done ? 'Buka pelajaran' : (started ? 'Lanjutkan' : 'Mulai')) + '</a>' +
       (sl ? '<a class="btn btn-small btn-flat" href="#pelajaran-' + l.id + '-latihan">Ulangi Latihan</a>' : '') + (su ? '<a class="btn btn-small btn-flat" href="#pelajaran-' + l.id + '-ulas">Ulangi Ulas</a>' : '') + '</div>';
-    return '<section class="card rp-lesson stack" aria-labelledby="rp-' + l.id + '"><div class="rp-head"><div><p class="rp-no">Pelajaran ' + l.no + '</p><h2 id="rp-' + l.id + '">' + esc(l.title) + '</h2></div>' + chip + '</div>' +
+    return '<section class="card rp-lesson stack" aria-labelledby="rp-' + l.id + '"><div class="rp-head"><div><p class="rp-no">' + unitOf(l) + ' ' + l.no + '</p><h2 id="rp-' + l.id + '">' + esc(l.title) + '</h2></div>' + chip + '</div>' +
       '<ol class="rp-steps" aria-label="Langkah belajar">' + steps + '</ol>' +
       '<div class="rp-scores">' + scoreBlock('Latihan', sl) + scoreBlock('Ulas', su) + '</div>' +
       '<p class="rp-write"><strong>Praktikkan:</strong> ' + write + '</p><p class="rp-tip">' + tip + '</p>' + links + '</section>';
   }
-  function reportView() {
-    const u = user();
-    const all = LESSONS.map((l) => prog(l.id));
+  function reportCourse(c, multi) {
+    const lessons = c.lessons;
+    const all = lessons.map((l) => prog(l.id));
     let right = 0; let total = 0;
     all.forEach((p) => ['latihan', 'ulas'].forEach((k) => { if (p.scores[k]) { right += p.scores[k].right; total += p.scores[k].total; } }));
     const avg = total ? Math.round((right / total) * 100) : null;
     let readSent = 0; let readAll = 0;
-    LESSONS.forEach((l, x) => { readAll += l.apply.lines.length; readSent += Object.keys((all[x].apply && all[x].apply.reads) || {}).length; });
-    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    lessons.forEach((l, x) => { readAll += l.apply.lines.length; readSent += Object.keys((all[x].apply && all[x].apply.reads) || {}).length; });
     const tile = (n, lab) => '<div class="rp-tile"><strong>' + n + '</strong><span>' + lab + '</span></div>';
+    return (multi ? '<h2 class="rp-course-title">' + esc(c.course.title) + '</h2>' : '') +
+      '<div class="rp-tiles">' + tile(doneCount(c) + ' dari ' + lessons.length, c.unit.toLowerCase() + ' selesai') + tile(avg === null ? '–' : avg + '%', 'nilai rata-rata Latihan dan Ulas') + tile(total ? right + ' dari ' + total : '–', 'soal dijawab benar') + tile(readSent + ' dari ' + readAll, 'kalimat sudah dibaca dengan suara') + '</div>' +
+      lessons.map(lessonReport).join('');
+  }
+  function reportView() {
+    const u = user();
+    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     return header(['laporan']) + '<main id="main" class="page narrow"><div class="stack" style="gap:6px"><h1 id="main-title" tabindex="-1">Laporan hasil belajar</h1>' +
-      '<p class="muted">' + esc(u.name) + ' · ' + esc(COURSE.title) + ' · diperbarui ' + today + '</p></div>' +
-      '<div class="rp-tiles">' + tile(doneCount() + ' dari ' + LESSONS.length, 'pelajaran selesai') + tile(avg === null ? '–' : avg + '%', 'nilai rata-rata Latihan dan Ulas') + tile(total ? right + ' dari ' + total : '–', 'soal dijawab benar') + tile(readSent + ' dari ' + readAll, 'kalimat sudah dibaca dengan suara') + '</div>' +
+      '<p class="muted">' + esc(u.name) + ' · diperbarui ' + today + '</p></div>' +
       '<div class="btn-row no-print"><button type="button" class="btn btn-primary" data-act="printReport">Cetak atau simpan PDF</button><a class="btn" href="#dashboard">Kembali ke beranda</a></div>' +
-      LESSONS.map(lessonReport).join('') +
+      reportCourse(COURSES.speaking, true) + reportCourse(COURSES.grammar, true) +
       '<p class="muted rp-foot">Nilai diambil dari percobaan terakhir. Data tersimpan di browser ini saja.</p></main>' + FOOT;
   }
 
@@ -1545,6 +1637,7 @@
     if (p.length === 0) { html = landing(); }
     else if (p[0] === 'masuk') { html = authView(r.query); title = 'Masuk | Yang Penting Inggris'; }
     else if (p[0] === 'dashboard') { if (!user()) { location.replace('#masuk'); return; } html = dashboard(); title = 'Beranda | Yang Penting Inggris'; }
+    else if (p[0] === 'grammar') { if (!user()) { location.replace('#masuk'); return; } html = dashboard('grammar'); title = 'Grammar | Yang Penting Inggris'; }
     else if (p[0] === 'pelajaran') { html = lessonView(p[1], p[2]); const l = lessonById(p[1]); if (l) title = l.title + ' | Yang Penting Inggris'; }
     else if (p[0] === 'laporan') { if (!user()) { location.replace('#masuk'); return; } html = reportView(); title = 'Laporan hasil belajar | Yang Penting Inggris'; }
     else if (p[0] === 'data') { html = dataView(); title = 'Data saya | Yang Penting Inggris'; }
@@ -1554,6 +1647,7 @@
     document.getElementById('app').innerHTML = html;
     document.title = title;
     document.body.classList.toggle('is-landing', p.length === 0);
+    { const gl = p[0] === 'pelajaran' ? lessonById(p[1]) : null; document.body.classList.toggle('gram', !!(gl && courseOf(gl) === COURSES.grammar)); }
     applyHeard();
     refreshStudyUI();
     if (opts.keepScroll) window.scrollTo(0, y);
