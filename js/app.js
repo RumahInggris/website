@@ -232,7 +232,8 @@
     lastClipSpeaker = sp.id;
     return 'audio/' + sp.id + '/' + key + '.' + AUD.files[sp.id][key];
   }
-  function stopAudio() { if (curAudio) { try { curAudio.pause(); } catch (e) { /* abaikan */ } curAudio = null; } }
+  function pauseVideos() { document.querySelectorAll('video.lesson-video').forEach((v) => { try { if (!v.paused) v.pause(); } catch (e) { /* abaikan */ } }); }
+  function stopAudio() { pauseVideos(); if (curAudio) { try { curAudio.pause(); } catch (e) { /* abaikan */ } curAudio = null; } }
   function markPlayed(el) { const k = audioKey(el); if (k) { played()[k] = 1; save(); showHeard(el); updateHeardBar(); } }
   function speakClip(key, ttsText, el, rate) {
     const url = pickClip(key);
@@ -846,6 +847,11 @@
   }
 
   /* ---------- blok "Penjelasan dulu" ---------- */
+  function videoHTML(b) {
+    return '<section class="card stack vid-card"><h3 class="vid-title"><span class="vid-ico" aria-hidden="true">▶</span>' + esc(b.title) + '</h3>' +
+      '<div class="vid-wrap"><video class="lesson-video" controls preload="metadata" playsinline data-src="' + esc(b.src) + '" poster="' + esc(b.poster || '') + '" aria-label="' + esc(b.title) + '"><source src="' + esc(b.src) + '" type="video/mp4">Browser ini belum bisa memutar video.</video></div>' +
+      (b.text ? '<p class="vid-note">' + esc(b.text) + '</p>' : '') + '</section>';
+  }
   function roleKeyHTML(b) {
     const rows = [['s', 'Subject', 'pelaku, atau yang sedang dibicarakan'], ['v', 'Verb / Auxiliary verb', 'kata kerja dan kata bantu (do, does, is)'], ['o', 'Object', 'yang dikenai pekerjaan'], ['a', 'Adverb', 'keterangan: kapan, di mana, atau seberapa sering'], ['j', 'Adjective', 'kata sifat']];
     return '<section class="card stack rk-sec"><h3 style="font-size:20px">' + esc(b.title || 'Kunci warna kalimat') + '</h3><ul class="rk-list">' +
@@ -1061,6 +1067,7 @@
       if (b.t === 'miniquiz') return mqHTML(bkey, b);
       if (b.t === 'explain') return explainHTML(b);
       if (b.t === 'key') return keyHTML(b);
+      if (b.t === 'video') return videoHTML(b);
       if (b.t === 'rolekey') return roleKeyHTML(b);
       if (b.t === 'formula') return formulaHTML(b);
       if (b.t === 'reveal') return revealHTML(b, bkey);
@@ -1761,7 +1768,14 @@
     else if (p[0] === 'beli') { html = buyView(); title = 'Beli course | Yang Penting Inggris'; }
     else { location.replace('#beranda'); return; }
     if (html === '') return;
+    const oldVids = {};
+    document.querySelectorAll('#app video.lesson-video').forEach((v) => { oldVids[v.getAttribute('data-src')] = { el: v, play: !v.paused }; });
     document.getElementById('app').innerHTML = html;
+    document.querySelectorAll('#app video.lesson-video').forEach((nv) => {
+      const o = oldVids[nv.getAttribute('data-src')];
+      if (o) { nv.replaceWith(o.el); delete oldVids[nv.getAttribute('data-src')]; if (o.play) { try { const pr = o.el.play(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) { /* abaikan */ } } }
+    });
+    Object.keys(oldVids).forEach((k) => { try { oldVids[k].el.pause(); } catch (e) { /* abaikan */ } });
     document.title = title;
     document.body.classList.toggle('is-landing', p.length === 0);
     document.body.classList.toggle('quiz-big', p[0] === 'kuis' && QZ.big);
@@ -2064,5 +2078,13 @@
     allVoices();
     try { window.speechSynthesis.addEventListener('voiceschanged', function () { refreshAudioUI(); }); } catch (e) { window.speechSynthesis.onvoiceschanged = refreshAudioUI; }
   }
+  document.addEventListener('play', function (e) {
+    const t = e.target;
+    if (!t || t.tagName !== 'VIDEO') return;
+    if (curAudio) { try { curAudio.pause(); } catch (err) { /* abaikan */ } curAudio = null; }
+    try { if (hasTTS()) window.speechSynthesis.cancel(); } catch (err) { /* abaikan */ }
+    document.querySelectorAll('.say.playing, .letter.playing, .listen-btn.playing').forEach((x) => x.classList.remove('playing'));
+    document.querySelectorAll('video.lesson-video').forEach((v) => { if (v !== t && !v.paused) v.pause(); });
+  }, true);
   render();
 })();

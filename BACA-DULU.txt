@@ -41,3 +41,8 @@ UNDUH PPT (topik Grammar)
 - Di akhir halaman Pahami ada tombol "Unduh" PPT Penjelasan. Di halaman "Topik selesai" ada PPT Penjelasan dan PPT Latihan.
 - File ada di folder downloads (simple-present-penjelasan.pptx dan simple-present-latihan.pptx). File simple-present.js berisi salinan keduanya supaya tombol bisa jalan tanpa server.
 - Kalau materi diubah, file PPT dan simple-present.js dibuat ulang (minta Claude menjalankan pembuatnya).
+
+VIDEO PENJELASAN (topik Grammar)
+- File video ada di folder video/ (simple-present-penjelasan.mp4 + gambar sampul .jpg).
+- Video tampil di halaman Pelajari, tepat di bawah kotak "Yuk mulai". Ia otomatis berhenti kalau tombol suara contoh ditekan, dan sebaliknya.
+- Untuk topik lain, tambahkan satu baris {"t": "video", ...} di js/grammar.js pada bagian learn, lalu taruh file videonya di folder video/.

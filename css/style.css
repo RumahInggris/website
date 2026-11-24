@@ -1141,3 +1141,13 @@ body.gram .rd-info { background: #FFF6D6; }
 .dl-btn { flex: none; }
 @media (max-width: 520px) { .dl-btn { width: 100%; } }
 @media print { .dl-card { display: none; } }
+
+/* ---------- video penjelasan ---------- */
+.vid-card { gap: 12px; }
+.vid-title { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 20px; }
+.vid-ico { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--navy); background: var(--yellow); font-size: 13px; padding-left: 2px; }
+.vid-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; border: 2.5px solid var(--navy); border-radius: 16px; overflow: hidden; background: var(--navy); box-shadow: 4px 4px 0 var(--navy); }
+.lesson-video { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: var(--navy); object-fit: contain; }
+.vid-note { margin: 0; font-size: 16px; color: #4a4f6b; }
+@media (max-width: 640px) { .vid-title { font-size: 18px; } .vid-wrap { border-radius: 12px; box-shadow: 3px 3px 0 var(--navy); } }
+@media print { .vid-card { display: none; } }
