@@ -1076,3 +1076,68 @@ body.gram .rd-text { font-size: 22px; }
 body.gram .rd-sum { background: #fff; border: 2px solid var(--navy); border-radius: 999px; padding: 6px 14px; align-self: flex-start; font-weight: 700; }
 body.gram .rd-info { background: #FFF6D6; }
 @media print { body.gram .card.ext0, body.gram .card.ext1, body.gram .card.ext2, body.gram .card.ext3 { background: #fff; } }
+
+/* ---------- Basic Grammar Quiz (#kuis) ---------- */
+.page.quiz { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; background-image: linear-gradient(rgba(31,35,64,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(31,35,64,.06) 1px, transparent 1px); background-size: 28px 28px; border-radius: 20px; }
+.qz-hero { text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; padding-top: 6px; }
+.qz-hero h1 { font-family: var(--font-head); font-weight: 800; font-size: 42px; line-height: 1.1; letter-spacing: -.5px; }
+.qz-hero h1 .t1 { color: #4B3FE0; } .qz-hero h1 .t2 { color: #E5584A; } .qz-hero h1 .t3 { color: #0E9F8A; }
+.qz-intro { margin: 0; font-size: 19px; font-weight: 700; background: var(--yellow); border: 2.5px solid var(--navy); border-radius: 999px; padding: 6px 18px; box-shadow: 3px 3px 0 var(--navy); }
+.qz-tools { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.qz-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.qz-q { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 2.5px solid var(--navy); border-radius: 20px; box-shadow: 4px 4px 0 var(--navy); background: #fff; }
+.qz-q.qt0 { background: #FFF6D6; } .qz-q.qt1 { background: #E6F8F2; } .qz-q.qt2 { background: #EEEAFF; } .qz-q.qt3 { background: #FFE9E2; }
+.qz-qh { display: flex; gap: 12px; align-items: flex-start; }
+.qz-num { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--navy); color: #fff; font-family: var(--font-head); font-weight: 800; font-size: 22px; }
+.qz-text { margin: 0; font-family: var(--font-head); font-weight: 700; font-size: 26px; line-height: 1.35; color: var(--navy); }
+.qz-blank { display: inline-block; min-width: 96px; margin: 0 4px; padding: 0 8px; border-bottom: 4px solid var(--navy); text-align: center; color: #0E7A53; }
+.qz-blank.on { background: #CFF1E3; border-radius: 8px 8px 0 0; }
+.qz-opts { display: grid; gap: 10px; }
+.qz-opt { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 58px; padding: 10px 16px; text-align: left; font: inherit; font-size: 22px; font-weight: 700; color: var(--navy); background: #fff; border: 2.5px solid var(--navy); border-radius: 16px; box-shadow: 3px 3px 0 var(--navy); cursor: pointer; transition: background-color .25s ease, opacity .3s ease; }
+.qz-opt i { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--navy); color: #fff; font-style: normal; font-weight: 800; font-size: 17px; }
+.qz-opt:hover:not([disabled]) { background: var(--yellow); }
+.qz-opt[disabled] { cursor: default; }
+.qz-opt.right { background: var(--mint); } .qz-opt.right i { background: #0E9F8A; }
+.qz-opt.wrong { background: var(--coral-light); } .qz-opt.wrong i { background: #B8321A; }
+.qz-opt.dim { opacity: .5; box-shadow: none; }
+.qz-ck { margin-left: auto; color: #0E7A53; font-size: 24px; }
+.qz-open { align-self: flex-start; }
+.qz-ans { display: flex; flex-direction: column; gap: 10px; animation: qz-in .35s ease both; }
+.qz-ansh { margin: 0; font-family: var(--font-head); font-size: 21px; }
+@keyframes qz-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.qz-score { text-align: center; margin: 0; font-family: var(--font-head); font-size: 26px; }
+.qz-score b { background: var(--yellow); border: 2.5px solid var(--navy); border-radius: 12px; padding: 2px 14px; }
+.qz-cta { text-align: center; align-items: center; background: #FFF6D6; border-width: 2.5px; }
+.qz-cta h2 { font-size: 24px; margin: 0; }
+.qz-cta p { margin: 0; font-size: 17px; }
+.qz-cta .btn-row { justify-content: center; }
+.page.quiz.big .qz-text { font-size: 34px; } .page.quiz.big .qz-opt { font-size: 28px; min-height: 70px; } .page.quiz.big .qz-hero h1 { font-size: 54px; }
+.page.quiz.big .qz-num { width: 52px; height: 52px; font-size: 28px; } .page.quiz.big .qz-ansh { font-size: 26px; } .page.quiz.big .ent-tip p { font-size: 22px; }
+@media (max-width: 520px) { .qz-intro { font-size: 16.5px; border-radius: 20px; padding: 6px 14px; } .qz-hero h1 { font-size: 34px; } .qz-text { font-size: 22px; } .qz-opt { font-size: 20px; } .qz-blank { min-width: 70px; } .page.quiz.big .qz-text { font-size: 28px; } .page.quiz.big .qz-hero h1 { font-size: 40px; } }
+@media (prefers-reduced-motion: reduce) { .qz-ans { animation: none; } }
+@media print { .qz-tools, .qz-open { display: none; } .qz-q, .qz-opt { box-shadow: none; } }
+.qz-set { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; background: var(--navy); color: #fff; border-radius: 16px; }
+.qz-set-t { font-family: var(--font-head); font-weight: 800; font-size: 20px; }
+.qz-set .btn { background: #fff; }
+.page.quiz.big .qz-set-t { font-size: 26px; }
+@media print { .qz-set .btn { display: none; } }
+.qz-tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.qz-tab { min-height: 48px; padding: 8px 22px; font: inherit; font-family: var(--font-head); font-weight: 800; font-size: 18px; color: var(--navy); background: #fff; border: 2.5px solid var(--navy); border-radius: 999px; cursor: pointer; }
+.qz-tab[aria-selected="true"] { background: var(--navy); color: #fff; box-shadow: 0 3px 0 var(--yellow); }
+.qz-tab:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.page.quiz.big .qz-tab { font-size: 22px; min-height: 56px; }
+@media (max-width: 420px) { .qz-tab { padding: 8px 16px; font-size: 16px; } }
+@media print { .qz-tabs { display: none; } }
+.qz-tools .btn svg { vertical-align: -4px; margin-right: 4px; }
+
+/* kartu unduhan PPT */
+.dl-card { background: var(--lav-light); }
+.dl-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.dl-item { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 14px 16px; background: #fff; border: 2px solid var(--navy); border-radius: 16px; }
+.dl-ico { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 14px; background: var(--coral); color: #fff; border: 2px solid var(--navy); font-family: var(--font-head); font-weight: 800; font-size: 15px; }
+.dl-txt { flex: 1 1 220px; display: grid; gap: 2px; min-width: 0; }
+.dl-txt strong { font-family: var(--font-head); font-size: 18px; }
+.dl-txt span { font-size: 15px; color: var(--muted); line-height: 1.45; }
+.dl-btn { flex: none; }
+@media (max-width: 520px) { .dl-btn { width: 100%; } }
+@media print { .dl-card { display: none; } }

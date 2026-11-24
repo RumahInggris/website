@@ -364,7 +364,9 @@
       if (!AC) return;
       if (!actx) actx = new AC();
       if (actx.state === 'suspended') actx.resume();
-      if (correct) { tone(784, 0, 0.22, 'sine', 0.22); tone(1047, 0.11, 0.38, 'sine', 0.22); tone(1568, 0.11, 0.38, 'sine', 0.05); }
+      if (correct === 'reveal') { tone(392, 0, 0.12, 'triangle', 0.16); tone(523, 0.08, 0.14, 'sine', 0.2); tone(659, 0.16, 0.16, 'sine', 0.2); tone(784, 0.25, 0.4, 'sine', 0.22); tone(1175, 0.25, 0.4, 'sine', 0.05); }
+      else if (correct === 'finish') { [523, 659, 784, 1047].forEach((f, k) => tone(f, k * 0.11, k === 3 ? 0.6 : 0.22, 'sine', 0.2)); tone(1568, 0.33, 0.6, 'sine', 0.05); }
+      else if (correct) { tone(784, 0, 0.22, 'sine', 0.22); tone(1047, 0.11, 0.38, 'sine', 0.22); tone(1568, 0.11, 0.38, 'sine', 0.05); }
       else { tone(220, 0, 0.32, 'triangle', 0.22, 150); tone(165, 0.12, 0.34, 'triangle', 0.18, 110); }
     } catch (e) { /* suara tidak tersedia */ }
   }
@@ -377,14 +379,14 @@
     const onLanding = parts.length === 0;
     let nav = '';
     if (u) {
-      nav = '<a href="#dashboard">Beranda</a><a href="#laporan">Laporan</a><a href="#data">Data saya</a>' +
+      nav = '<a href="#dashboard">Beranda</a><a href="#kuis">Kuis</a><a href="#laporan">Laporan</a><a href="#data">Data saya</a>' +
         '<span class="avatar" aria-hidden="true">' + esc((u.name || '?').charAt(0).toUpperCase()) + '</span>' +
         '<button type="button" class="linklike" data-act="logout">Keluar</button>';
     } else if (onLanding) {
       nav = '<button type="button" class="linklike" data-scroll="course">Course</button><button type="button" class="linklike" data-scroll="cara">Cara belajar</button><button type="button" class="linklike" data-scroll="harga">Harga</button><button type="button" class="linklike" data-scroll="faq">FAQ</button>' +
-        '<a href="#masuk">Masuk</a><a class="btn btn-yellow btn-small" href="#pelajaran-salam">Mulai gratis</a>';
+        '<a href="#kuis">Kuis</a><a href="#masuk">Masuk</a><a class="btn btn-yellow btn-small" href="#pelajaran-salam">Mulai gratis</a>';
     } else {
-      nav = '<a href="#beranda">Beranda</a><a href="#data">Data saya</a><a class="btn btn-yellow btn-small" href="#masuk">Masuk</a>';
+      nav = '<a href="#beranda">Beranda</a><a href="#kuis">Kuis</a><a href="#data">Data saya</a><a class="btn btn-yellow btn-small" href="#masuk">Masuk</a>';
     }
     return (storageOK ? '' : '<div class="warn" role="alert">Penyimpanan di browser ini tidak tersedia, jadi kemajuan belajarmu tidak akan tersimpan. Coba buka dengan Chrome atau Edge.</div>') +
       '<header class="site-header"><a class="logo" href="' + (u ? '#dashboard' : '#beranda') + '"><span class="logo-mark" aria-hidden="true">Y</span><span class="logo-text">Yang Penting Inggris</span></a><nav class="nav" aria-label="Menu utama">' + nav + '</nav></header>';
@@ -1273,6 +1275,71 @@
       '<div class="btn-row"><button type="button" class="btn" data-act="redo">Ulangi dari awal</button><button type="button" class="btn btn-primary" data-act="finishEx">' + (isLast ? 'Selesaikan pelajaran' : 'Lanjut: ' + STEPS[STEPS.indexOf(step) + 1].label) + '</button></div></section>';
   }
 
+  /* ---------- kartu unduhan PPT (file ada di folder downloads) ---------- */
+  function dlCard(lesson, keys, title) {
+    const list = (lesson.downloads || []).filter((d) => !keys || keys.indexOf(d.key) >= 0);
+    if (!list.length) return '';
+    return '<section class="card card-shadow stack dl-card" aria-labelledby="dl-h-' + lesson.id + '"><h2 id="dl-h-' + lesson.id + '" style="font-size:22px">' + esc(title || 'Bawa pulang materinya') + '</h2>' +
+      '<p class="muted">Unduh file PowerPoint (.pptx) untuk kamu pakai sendiri di komputer. Bisa dibuka di PowerPoint, Google Slides, atau LibreOffice.</p>' +
+      '<ul class="dl-list">' + list.map((d) => '<li class="dl-item"><span class="dl-ico" aria-hidden="true">PPT</span><div class="dl-txt"><strong>' + esc(d.title) + '</strong><span>' + esc(d.desc) + '</span></div>' +
+        '<a class="btn btn-small btn-yellow dl-btn" href="' + esc(d.file) + '" download="' + esc(d.name) + '" data-dl="' + esc(d.key) + '" data-src="' + esc(d.data || '') + '" data-name="' + esc(d.name) + '"><span aria-hidden="true">⬇</span> Unduh<span class="sr-only"> ' + esc(d.title) + ', file PowerPoint</span></a></li>').join('') + '</ul></section>';
+  }
+
+  /* tombol unduh PPT: isi file dimuat dari downloads/<topik>.js (base64) lalu disimpan sebagai .pptx */
+  const PPTX_MIME = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  document.addEventListener('click', function (e) {
+    const a = e.target && e.target.closest ? e.target.closest('a.dl-btn') : null;
+    if (!a || !a.getAttribute('data-src')) return;
+    e.preventDefault();
+    const name = a.getAttribute('data-name');
+    const fallback = () => { location.href = a.getAttribute('href'); };
+    // unduhan langsung (situs asli, file zip, browser biasa)
+    const direct = (u) => {
+      try {
+        const url = URL.createObjectURL(new Blob([u], { type: PPTX_MIME }));
+        const t = document.createElement('a');
+        t.href = url; t.download = name; t.style.display = 'none';
+        document.body.appendChild(t); t.click();
+        setTimeout(() => { URL.revokeObjectURL(url); t.remove(); }, 4000);
+      } catch (err) { fallback(); }
+    };
+    // di jendela pratinjau Claude, unduhan harus lewat halaman pembungkus (induk)
+    const viaParent = (u) => {
+      let acked = false, done = false, timer = null;
+      const off = () => window.removeEventListener('message', onMsg);
+      function onMsg(ev) {
+        const d = ev.data;
+        if (!d || ev.source !== window.parent) return;
+        if (d.type === 'ypi-download-ack') { acked = true; return; }
+        if (d.type !== 'ypi-download-result') return;
+        done = true; off(); clearTimeout(timer);
+        if (d.ok) toast('File sudah disimpan. Cek folder Unduhan.');
+        else if (d.code === 'declined') toast('Unduhan dibatalkan.');
+        else { toast('Unduhan tidak bisa dari jendela pratinjau ini.'); direct(u); }
+      }
+      window.addEventListener('message', onMsg);
+      timer = setTimeout(() => { if (!acked && !done) { off(); direct(u); } }, 1500);
+      const buf = u.buffer.slice(0);
+      window.parent.postMessage({ type: 'ypi-download', name, buf }, '*', [buf]);
+    };
+    const save = () => {
+      const b64 = window.PPT_DATA && window.PPT_DATA[name];
+      if (!b64) { fallback(); return; }
+      let u;
+      try {
+        const bin = atob(b64); u = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      } catch (err) { fallback(); return; }
+      let embedded = false;
+      try { embedded = !!window.parent && window.parent !== window; } catch (err) { embedded = false; }
+      if (embedded) viaParent(u); else direct(u);
+    };
+    if (window.PPT_DATA && window.PPT_DATA[name]) { save(); return; }
+    const sc = document.createElement('script');
+    sc.src = a.getAttribute('data-src'); sc.onload = save; sc.onerror = fallback;
+    document.head.appendChild(sc);
+  });
+
   function completeView(lesson) {
     const p = prog(lesson.id);
     const cc = courseOf(lesson);
@@ -1290,7 +1357,7 @@
     return '<section class="card card-shadow stack lock-card"><h2 id="main-title" tabindex="-1" style="font-size:28px">' + cc.unit + ' ' + lesson.no + ' selesai!</h2>' +
       '<p>Nilai latihan: <strong>' + (sc.latihan ? sc.latihan.right + ' dari ' + sc.latihan.total : '-') + '</strong>. Nilai ulas: <strong>' + (sc.ulas ? sc.ulas.right + ' dari ' + sc.ulas.total : '-') + '</strong>.</p>' +
       (u ? '' : '<p class="notice">Kemajuanmu belum tersimpan karena belum masuk. Buat akun gratis supaya tersimpan di komputer ini.</p>') +
-      '<div class="btn-row" style="justify-content:center">' + nextBtn + (u ? '<a class="btn" href="' + cc.hash + '">Kembali ke daftar pelajaran</a>' : '<a class="btn" href="#masuk">Buat akun gratis</a>') + '</div></section>';
+      '<div class="btn-row" style="justify-content:center">' + nextBtn + (u ? '<a class="btn" href="' + cc.hash + '">Kembali ke daftar pelajaran</a>' : '<a class="btn" href="#masuk">Buat akun gratis</a>') + '</div></section>' + dlCard(lesson);
   }
 
   function lessonView(id, keyParam) {
@@ -1327,7 +1394,7 @@
     if (P.complete) {
       main = completeView(lesson);
     } else if (step.src === 'learn' || step.src === 'understand') {
-      main = '<div class="stack">' + blocks(lesson[step.src], lesson.id + ':' + step.key) + '</div>' + stepNav(si, STEPS[si + 1]);
+      main = '<div class="stack">' + blocks(lesson[step.src], lesson.id + ':' + step.key) + (step.key === 'pahami' ? dlCard(lesson, ['penjelasan'], 'Mau belajar lagi di komputer?') : '') + '</div>' + stepNav(si, STEPS[si + 1]);
     } else if (step.src === 'practice' || step.src === 'review') {
       main = P.summary ? summaryView(lesson, step) : exView(lesson, step.src);
     } else if (step.src === 'apply') {
@@ -1612,6 +1679,55 @@
       '<div class="card stack"><h2 style="font-size:20px">Hapus data</h2><p class="muted" style="font-size:15px">Menghapus semua akun dan kemajuan belajar di browser ini. Tidak bisa dibatalkan.</p>' +
       (confirmReset ? '<div class="btn-row"><button type="button" class="btn btn-primary" style="background:#A3200B" data-act="reset">Ya, hapus semuanya</button><button type="button" class="btn" data-act="cancelReset">Batal</button></div>' : '<div><button type="button" class="btn" data-act="askReset">Hapus semua data</button></div>') + '</div></main>' + FOOT;
   }
+  let QZ = { tab: 'sp', s: { sp: { open: {}, pick: {} }, pc: { open: {}, pick: {} } }, big: false };
+  function quizNow() {
+    const tops = (window.GRAMMAR && window.GRAMMAR.quiz && window.GRAMMAR.quiz.topics) || [];
+    const T = tops.find((x) => x.id === QZ.tab) || tops[0];
+    if (T && !QZ.s[T.id]) QZ.s[T.id] = { open: {}, pick: {} };
+    return { T, st: T ? QZ.s[T.id] : null, tops };
+  }
+  function kuisView() {
+    const { T: Q, st, tops } = quizNow();
+    if (!Q) return header(['kuis']) + '<main id="main" class="page narrow"><p>Kuis belum tersedia.</p></main>' + FOOT;
+    const n = Q.items.length;
+    const picked = Object.keys(st.pick).length;
+    const items = Q.items.map((it, i) => {
+      const open = !!st.open[i];
+      const pk = st.pick[i];
+      const parts = it.q.split('___');
+      const hasBlank = it.q.indexOf('___') >= 0;
+      const blank = hasBlank ? '<span class="qz-blank' + (open ? ' on' : '') + '">' + (open ? esc(it.options[it.answer]) : '') + '</span>' : '';
+      const opts = it.options.map((o, oi) => {
+        let cls = 'qz-opt';
+        if (open) cls += oi === it.answer ? ' right' : (oi === pk ? ' wrong' : ' dim');
+        return '<button type="button" class="' + cls + '" data-act="qzPick" data-i="' + i + '" data-o="' + oi + '"' + (open ? ' disabled' : '') + '><i aria-hidden="true">' + String.fromCharCode(65 + oi) + '</i><span>' + esc(o) + '</span>' + (open && oi === it.answer ? '<b class="qz-ck" aria-hidden="true">✓</b>' : '') + '</button>';
+      }).join('');
+      let ans = '';
+      if (open) {
+        const head = pk === undefined ? 'Jawabannya' : (pk === it.answer ? 'Tepat!' : 'Belum tepat. Jawabannya');
+        ans = '<div class="qz-ans" role="status"><p class="qz-ansh">' + head + ': <b>' + String.fromCharCode(65 + it.answer) + '. ' + esc(it.options[it.answer]) + '</b></p>' + (it.rule ? fmlChips(it.rule) : '') +
+          '<div class="ent-tip"><span class="ent-tip-ico" aria-hidden="true">💡</span><p>' + rich(it.why) + '</p></div></div>';
+      }
+      const setHead = Q.sets && (i === 0 || Q.items[i - 1].set !== it.set)
+        ? '<li class="qz-set"><span class="qz-set-t">' + esc(Q.sets[it.set]) + '</span><button type="button" class="btn btn-small" data-act="qzSet" data-s="' + it.set + '">' +
+          (Q.items.every((x, k) => x.set !== it.set || st.open[k]) ? 'Tutup set ini' : 'Buka jawaban set ini') + '</button></li>' : '';
+      return setHead + '<li class="qz-q qt' + (i % 4) + '"><div class="qz-qh"><span class="qz-num">' + (i + 1) + '</span><p class="qz-text">' + esc(parts[0]) + blank + esc(parts[1] || '') + '</p></div>' +
+        '<div class="qz-opts" role="group" aria-label="Pilihan jawaban nomor ' + (i + 1) + '">' + opts + '</div>' +
+        (open ? '' : '<button type="button" class="btn btn-small qz-open" data-act="qzOpen" data-i="' + i + '">Buka jawaban</button>') + ans + '</li>';
+    }).join('');
+    const allOpen = Object.keys(st.open).length === n;
+    const score = picked === n ? Q.items.filter((it, i) => st.pick[i] === it.answer).length : null;
+    return header(['kuis']) + '<main id="main" class="page quiz' + (QZ.big ? ' big' : '') + '"><section class="qz-hero"><h1 id="main-title" tabindex="-1"><span class="t1">Basic</span> <span class="t2">Grammar</span> <span class="t3">Quiz</span></h1>' +
+      '<nav class="qz-tabs" role="tablist" aria-label="Pilih topik kuis">' + tops.map((t) => '<button type="button" role="tab" class="qz-tab" data-act="qzTab" data-t="' + t.id + '" aria-selected="' + (t.id === Q.id ? 'true' : 'false') + '">' + esc(t.label) + '</button>').join('') + '</nav>' +
+      '<p class="qz-intro">' + esc(Q.intro) + '</p><div class="qz-tools">' +
+      (allOpen ? '<button type="button" class="btn btn-small" data-act="qzReset">Tutup semua jawaban</button>' : '<button type="button" class="btn btn-small btn-primary" data-act="qzAll">Buka semua jawaban</button>') +
+      '<button type="button" class="btn btn-small" data-act="toggleSound" aria-pressed="' + (soundOn() ? 'true' : 'false') + '">' + (soundOn() ? ICON.sound(18) + ' Suara hidup' : ICON.mute(18) + ' Suara mati') + '</button>' +
+      '<button type="button" class="btn btn-small" data-act="qzBig" aria-pressed="' + (QZ.big ? 'true' : 'false') + '">' + (QZ.big ? 'Tulisan normal' : 'Tulisan besar') + '</button></div></section>' +
+      '<ol class="qz-list">' + items + '</ol>' +
+      (score !== null ? '<p class="qz-score" role="status">Skormu: <b>' + score + ' dari ' + n + '</b></p>' : '') +
+      '<section class="card card-shadow stack qz-cta"><h2>' + esc(Q.cta.title) + '</h2><p>' + esc(Q.cta.text) + '</p><div class="btn-row">' + (Q.cta.buttons || []).map((bt, bi) => '<a class="btn' + (bi === 0 ? ' btn-primary' : '') + '" href="' + bt[1] + '">' + esc(bt[0]) + '</a>').join('') + '</div></section></main>' + FOOT;
+  }
+
   function buyView() {
     return header(['beli']) + '<main id="main" class="page narrow"><div class="card card-shadow stack lock-card"><h1 id="main-title" tabindex="-1" style="font-size:26px">Pembayaran belum tersedia di versi lokal</h1>' +
       '<p>Harga course: <strong>' + PLACEHOLDER_PRICE + '</strong> (belum ditentukan). Pembayaran lewat Midtrans dibuat di tahap berikutnya, dan diuji dulu di mode sandbox tanpa uang sungguhan.</p>' +
@@ -1639,6 +1755,7 @@
     else if (p[0] === 'dashboard') { if (!user()) { location.replace('#masuk'); return; } html = dashboard(); title = 'Beranda | Yang Penting Inggris'; }
     else if (p[0] === 'grammar') { if (!user()) { location.replace('#masuk'); return; } html = dashboard('grammar'); title = 'Grammar | Yang Penting Inggris'; }
     else if (p[0] === 'pelajaran') { html = lessonView(p[1], p[2]); const l = lessonById(p[1]); if (l) title = l.title + ' | Yang Penting Inggris'; }
+    else if (p[0] === 'kuis') { html = kuisView(); title = 'Basic Grammar Quiz | Yang Penting Inggris'; }
     else if (p[0] === 'laporan') { if (!user()) { location.replace('#masuk'); return; } html = reportView(); title = 'Laporan hasil belajar | Yang Penting Inggris'; }
     else if (p[0] === 'data') { html = dataView(); title = 'Data saya | Yang Penting Inggris'; }
     else if (p[0] === 'beli') { html = buyView(); title = 'Beli course | Yang Penting Inggris'; }
@@ -1647,6 +1764,7 @@
     document.getElementById('app').innerHTML = html;
     document.title = title;
     document.body.classList.toggle('is-landing', p.length === 0);
+    document.body.classList.toggle('quiz-big', p[0] === 'kuis' && QZ.big);
     { const gl = p[0] === 'pelajaran' ? lessonById(p[1]) : null; document.body.classList.toggle('gram', !!(gl && courseOf(gl) === COURSES.grammar)); }
     applyHeard();
     refreshStudyUI();
@@ -1752,6 +1870,19 @@
     }
     if (act === 'testVoice') { speakText(SAMPLE, null); return; }
     if (act === 'spell') { speakSpell(el.getAttribute('data-w'), el); return; }
+    if (act === 'qzTab') { QZ.tab = el.getAttribute('data-t'); render({ keepScroll: false }); return; }
+    if (act === 'qzOpen') { quizNow().st.open[Number(el.getAttribute('data-i'))] = true; sfx('reveal'); render({ keepScroll: true }); return; }
+    if (act === 'qzPick') { const qi = Number(el.getAttribute('data-i')); const q = quizNow(); const pv = Number(el.getAttribute('data-o')); q.st.pick[qi] = pv; q.st.open[qi] = true; sfx(pv === q.T.items[qi].answer); if (Object.keys(q.st.pick).length === q.T.items.length) setTimeout(() => sfx('finish'), 650); render({ keepScroll: true }); return; }
+    if (act === 'qzSet') {
+      const q = quizNow(); const sidx = Number(el.getAttribute('data-s')); const its = q.T.items;
+      const allOn = its.every((x, k) => x.set !== sidx || q.st.open[k]);
+      its.forEach((x, k) => { if (x.set === sidx) { if (allOn) { delete q.st.open[k]; delete q.st.pick[k]; } else q.st.open[k] = true; } });
+      if (!allOn) sfx('reveal');
+      render({ keepScroll: true }); return;
+    }
+    if (act === 'qzAll') { const q = quizNow(); q.T.items.forEach((_, i) => { q.st.open[i] = true; }); sfx('reveal'); render({ keepScroll: true }); return; }
+    if (act === 'qzReset') { const q = quizNow(); q.st.open = {}; q.st.pick = {}; render({ keepScroll: true }); return; }
+    if (act === 'qzBig') { QZ.big = !QZ.big; render({ keepScroll: true }); return; }
     if (act === 'demo') { demoPick = Number(el.getAttribute('data-i')); render({ keepScroll: true }); return; }
     if (act === 'toggleSound') { DB.sound = !soundOn(); save(); if (soundOn()) sfx(true); render({ keepScroll: true }); toast(soundOn() ? 'Efek suara jawaban hidup.' : 'Efek suara jawaban mati.'); return; }
     if (act === 'printReport') { try { window.print(); } catch (e) { toast('Cetak tidak tersedia di tampilan ini. Coba buka halaman ini langsung di browser.'); } return; }

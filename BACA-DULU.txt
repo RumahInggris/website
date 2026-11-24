@@ -35,3 +35,9 @@ BATASAN VERSI INI
 - Belum ada pembayaran, belum ada panel admin. Itu tahap berikutnya.
 - Gambar peta untuk pelajaran "Giving Direction" belum dimasukkan.
 - Suara masih memakai suara bawaan browser. Rekaman penutur asli (misalnya dari ElevenLabs) akan dipasang nanti lewat folder audio/ setelah materi selesai. Lihat audio/BACA-DULU.txt.
+
+
+UNDUH PPT (topik Grammar)
+- Di akhir halaman Pahami ada tombol "Unduh" PPT Penjelasan. Di halaman "Topik selesai" ada PPT Penjelasan dan PPT Latihan.
+- File ada di folder downloads (simple-present-penjelasan.pptx dan simple-present-latihan.pptx). File simple-present.js berisi salinan keduanya supaya tombol bisa jalan tanpa server.
+- Kalau materi diubah, file PPT dan simple-present.js dibuat ulang (minta Claude menjalankan pembuatnya).
