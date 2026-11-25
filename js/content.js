@@ -769,6 +769,7 @@ window.COURSE = {
       access: "premium",
       minutes: 10,
       learn: [
+        {"t": "video", "src": "video/deskripsi-penjelasan.mp4", "poster": "video/deskripsi-penjelasan.jpg", "title": "Video praktik Describing things", "text": "Tonton dulu videonya (sekitar 3,5 menit) dan ikut mengucapkan kalimatnya, lalu lanjut membaca di bawah. Video bisa dijeda dan diulang kapan saja."},
         {"t": "explain", "title": "Tujuh poin untuk mendeskripsikan benda", "lead": "Kamu tidak perlu menyebut semuanya. Pilih poin yang paling penting supaya ceritamu rapi dan mudah dipahami.", "points": [{"icon": "🏷️", "title": "Nama", "text": "Benda apa ini?"}, {"icon": "📐", "title": "Penampilan", "text": "Ukuran, bentuk, warna."}, {"icon": "⚖️", "title": "Berat", "text": "Ringan atau berat."}, {"icon": "✅", "title": "Kondisi", "text": "Baru, lama, bagus."}, {"icon": "🌍", "title": "Asal dan merek", "text": "Dibuat di mana, mereknya apa."}, {"icon": "🧱", "title": "Bahan", "text": "Terbuat dari apa."}, {"icon": "🛠️", "title": "Fungsi", "text": "Dipakai untuk apa."}], "note": "Cara cepat mengingat: mulai dari <strong>apa bendanya</strong>, lalu <strong>bagaimana rupanya</strong>, lalu <strong>untuk apa dipakai</strong>."},
         { t: "text", html: "Saat mendeskripsikan benda, sebut poin-poin berikut agar ceritamu lengkap dan teratur." },
         { t: "table", title: "7 poin mendeskripsikan benda", head: ["No", "Poin", "Artinya"], rows: [
