@@ -468,10 +468,7 @@
         '<div class="card" style="background:var(--lav)"><h3 style="font-size:22px;margin-bottom:8px">Bingung menyusun kalimat</h3><p class="muted">Kata-katanya ada, tapi susunannya belum pas.</p>' + helpBox('Ada dialog dan contoh kalimat, soal menyusun kata, dan pola kalimat yang tinggal diganti isinya, jadi kamu tidak menyusun dari nol.') + '</div>' +
       '</div></div></section>' +
 
-      '<section id="cara" class="container section"><div class="sec-head"><span class="eyebrow">Cara belajar</span><h2>Satu pelajaran, lima langkah singkat</h2><p class="muted" style="margin-top:10px;max-width:640px">Sekitar 10 menit per pelajaran, pas diselipkan di sela sekolah atau kuliah.</p></div><div class="grid steps5">' +
-        [['Pelajari', 'Dengar ekspresi kunci dalam situasi nyata.', '#FFC93C'], ['Pahami', 'Penjelasan singkat dalam bahasa Indonesia.', '#19B394'], ['Latihan', 'Jawab soal dan dapat koreksi langsung.', '#FF6B4A'], ['Praktikkan', 'Baca kalimat dengan suara dan dapat koreksi.', 'var(--accent)'], ['Ulas', 'Kuis singkat untuk mengecek.', '#1F2340']].map((s, i) =>
-          '<div class="card"><span class="num" style="background:' + s[2] + ';color:' + (i >= 3 ? '#fff' : '#1F2340') + ';margin-bottom:12px" aria-hidden="true">' + (i + 1) + '</span><h3 style="font-size:20px;margin-bottom:6px">' + s[0] + '</h3><p class="muted" style="font-size:16px">' + s[1] + '</p></div>').join('') +
-      '</div></section>' +
+      cbSection(heroBtn) +
 
       '<section id="course" class="band" style="background:var(--lav-light)"><div class="container section"><div class="sec-head"><span class="eyebrow">Mulai dari sini</span><h2>Course pertama: ' + esc(COURSE.title) + '</h2><p class="muted" style="margin-top:10px;max-width:640px">Disusun dari materi kelas Rumah Inggris untuk level ' + esc(COURSE.level) + '. Klik pelajaran untuk mencobanya.</p></div><div class="list">' +
         LESSONS.map((l) => lessonRow(l, 'landing')).join('') + '</div></div></section>' +
@@ -496,22 +493,154 @@
       '</main>' + FOOT;
   }
 
+  /* ---------- Cara belajar: tur lima langkah yang bergerak ---------- */
+  const CB = { i: 0, hold: false, io: null };
+  const CB_STEPS = [
+    ['Pelajari', 'Dengar ekspresi kunci dalam situasi nyata.', '#FFC93C', '#1F2340'],
+    ['Pahami', 'Penjelasan singkat dalam bahasa Indonesia.', '#19B394', '#1F2340'],
+    ['Latihan', 'Jawab soal dan dapat koreksi langsung.', '#FF6B4A', '#1F2340'],
+    ['Praktikkan', 'Baca kalimat dengan suara dan dapat koreksi.', '#4B3FE0', '#fff'],
+    ['Ulas', 'Kuis singkat untuk mengecek.', '#1F2340', '#fff']
+  ];
+  function cbStar(cx, cy, R, d) {
+    let p = '';
+    for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5; const rr = k % 2 ? R * 0.45 : R; p += (k ? 'L' : 'M') + (cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1); }
+    return '<path class="c5-star" style="--d:' + d + 's" d="' + p + 'Z" fill="#FFC93C" stroke="#1F2340" stroke-width="2.5" stroke-linejoin="round"/>';
+  }
+  function cbScene(k) {
+    const N = '#1F2340';
+    const head = '<svg viewBox="0 0 480 360" focusable="false" aria-hidden="true">' +
+      '<g class="cb-dec"><circle cx="18" cy="22" r="6" fill="#fff" opacity=".7"/><circle cx="462" cy="342" r="8" fill="#fff" opacity=".55"/><path d="M452 20v14M445 27h14" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".7"/></g>';
+    const pill = (x, y, w, t) => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="26" rx="13" fill="#FFF1C7" stroke="' + N + '" stroke-width="2"/><text x="' + (x + w / 2) + '" y="' + (y + 18) + '" text-anchor="middle" font-size="13.5" font-weight="700" fill="' + N + '">' + t + '</text>';
+    const card = (y, h) => '<rect x="34" y="' + y + '" width="412" height="' + h + '" rx="26" fill="#fff" stroke="' + N + '" stroke-width="3.5"/>';
+    if (k === 0) {
+      return head + '<g class="k-pop" style="--d:.05s">' + card(40, 200) + pill(56, 58, 104, 'Di stasiun') + '</g>' +
+        '<rect class="k-wipe" style="--d:.9s;--t:.8s" x="52" y="100" width="252" height="46" rx="10" fill="#FFE08A"/>' +
+        '<text class="k-in" style="--d:.6s" x="64" y="136" font-size="36" font-weight="700" fill="' + N + '">Excuse me,</text>' +
+        '<rect class="k-wipe" style="--d:1.9s;--t:1.3s" x="52" y="158" width="340" height="40" rx="10" fill="#FFE08A"/>' +
+        '<text class="k-in" style="--d:1.6s" x="64" y="188" font-size="27" font-weight="700" fill="' + N + '">Where is the station?</text>' +
+        '<text class="k-up" style="--d:3.3s" x="64" y="224" font-size="17" font-weight="600" fill="#4A4F73">Permisi, stasiunnya di mana?</text>' +
+        '<g class="c1-spk"><circle class="c1-ring" style="--d:0s" cx="402" cy="104" r="27" fill="none" stroke="#4B3FE0" stroke-width="3"/><circle class="c1-ring" style="--d:.9s" cx="402" cy="104" r="27" fill="none" stroke="#4B3FE0" stroke-width="3"/>' +
+        '<circle cx="402" cy="104" r="27" fill="#4B3FE0" stroke="' + N + '" stroke-width="3.5"/><path d="M390 98h7l9-7v26l-9-7h-7z" fill="#fff" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path class="c1-w" d="M411 97q5 7 0 14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path class="c1-w w2" d="M416 91q9 13 0 26" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>' +
+        '<g class="k-up" style="--d:1s"><rect x="40" y="272" width="250" height="44" rx="22" fill="#fff" stroke="' + N + '" stroke-width="3"/><text x="165" y="300" text-anchor="middle" font-size="16" font-weight="700" fill="' + N + '">Dengarkan, lalu tirukan</text></g>' +
+        '<g class="k-pop" style="--d:.5s"><g class="m-happy" transform="translate(332 238)">' + qMascot('happy', 112) + '</g></g></svg>';
+    }
+    if (k === 1) {
+      const chip = (x, w, f, s, t, tc, fs) => '<rect x="' + x + '" y="142" width="' + w + '" height="50" rx="14" fill="' + f + '" stroke="' + s + '" stroke-width="3"/><text x="' + (x + w / 2) + '" y="' + (142 + 34) + '" text-anchor="middle" font-size="' + fs + '" font-weight="700" fill="' + tc + '">' + t + '</text>';
+      const lab = (x, t, c, d) => '<text class="k-in" style="--d:' + d + 's" x="' + x + '" y="134" text-anchor="middle" font-size="13" font-weight="700" fill="' + c + '">' + t + '</text>';
+      return head + '<g class="k-pop" style="--d:.05s">' + card(40, 250) + pill(56, 58, 118, 'Pola kalimat') + '</g>' +
+        '<g class="c2-bulb"><circle class="c2-glow" cx="392" cy="82" r="30" fill="#FFE08A"/><g class="c2-rays" fill="none" stroke="' + N + '" stroke-width="3" stroke-linecap="round"><path d="M392 48v7M365 60l5 5M419 60l-5 5M358 84h7M426 84h-7"/></g>' +
+        '<path d="M392 67a15 15 0 0 0-8 27v6h16v-6a15 15 0 0 0-8-27z" fill="#FFC93C" stroke="' + N + '" stroke-width="3" stroke-linejoin="round"/><path d="M386 106h12" stroke="' + N + '" stroke-width="3" stroke-linecap="round"/></g>' +
+        '<g class="k-pop" style="--d:.8s">' + chip(60, 56, '#DCEBFF', '#3B82F6', 'I', '#1D4ED8', 28) + '</g>' + lab(88, 'siapa', '#1D4ED8', 1.1) +
+        '<g class="k-pop" style="--d:1.6s">' + chip(128, 84, '#EBDDFF', '#7C4DFF', 'am', '#5B2BE0', 28) + '</g>' + lab(170, 'kata kerja', '#5B2BE0', 1.9) +
+        '<g class="k-pop" style="--d:2.4s">' + chip(224, 190, '#D8F5EA', '#19B394', 'from Bandung', '#0B7A63', 22) + '</g>' + lab(319, 'asal', '#0B7A63', 2.7) +
+        '<path class="k-in" style="--d:3.2s" d="M240 200v20M231 213l9 9 9-9" fill="none" stroke="' + N + '" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<g class="k-up" style="--d:3.4s"><rect x="62" y="232" width="356" height="42" rx="21" fill="#FFF8DD" stroke="' + N + '" stroke-width="2.5"/><text x="240" y="260" text-anchor="middle" font-size="21" font-weight="700"><tspan fill="#1D4ED8">Saya </tspan><tspan fill="#5B2BE0">berasal </tspan><tspan fill="#0B7A63">dari Bandung.</tspan></text></g>' +
+        '<text class="k-in" style="--d:4.2s" x="240" y="330" text-anchor="middle" font-size="16" font-weight="700" fill="' + N + '">Pola kalimat yang tinggal diganti isinya</text></svg>';
+    }
+    if (k === 2) {
+      const row = (y, l, w, cls) => '<g class="' + cls + '"><rect x="60" y="' + y + '" width="360" height="46" rx="14" fill="#fff" stroke="' + N + '" stroke-width="2.5"/>' +
+        (cls === 'c3-a' ? '<rect class="c3-bad" x="60" y="' + y + '" width="360" height="46" rx="14" fill="#FFE1D8" stroke="#E5532F" stroke-width="3"/>' : '') +
+        (cls === 'c3-b' ? '<rect class="c3-ok" x="60" y="' + y + '" width="360" height="46" rx="14" fill="#D8F5EA" stroke="#19B394" stroke-width="3"/>' : '') +
+        '<circle cx="86" cy="' + (y + 23) + '" r="14" fill="#F3F1FF" stroke="' + N + '" stroke-width="2"/><text x="86" y="' + (y + 29) + '" text-anchor="middle" font-size="15" font-weight="700" fill="' + N + '">' + l + '</text>' +
+        '<text x="116" y="' + (y + 31) + '" font-size="22" font-weight="700" fill="' + N + '">' + w + '</text>' +
+        (cls === 'c3-a' ? '<text class="c3-badt" x="404" y="' + (y + 29) + '" text-anchor="end" font-size="14" font-weight="700" fill="#C2381A">Belum tepat</text>' : '') +
+        (cls === 'c3-b' ? '<g class="c3-okt"><text x="368" y="' + (y + 29) + '" text-anchor="end" font-size="14" font-weight="700" fill="#0B7A63">Tepat!</text><circle cx="388" cy="' + (y + 23) + '" r="12" fill="#19B394" stroke="' + N + '" stroke-width="2"/><path d="M382 ' + (y + 23) + 'l4.5 4.5 8-9" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>' : '') + '</g>';
+      let conf = '';
+      const cc = ['#FF6B4A', '#FFC93C', '#19B394', '#6155F2', '#FF8FB1'];
+      for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; conf += '<circle class="c3-cf" cx="388" cy="213" r="' + (i % 2 ? 4 : 3) + '" fill="' + cc[i % 5] + '" style="--x:' + Math.round(Math.cos(a) * 46) + 'px;--y:' + Math.round(Math.sin(a) * 34 - 6) + 'px"/>'; }
+      return head + '<g class="k-pop" style="--d:.05s">' + card(30, 300) + pill(56, 46, 72, 'Soal 1') + '</g>' +
+        '<text class="k-in" style="--d:.4s" x="240" y="112" text-anchor="middle" font-size="30" font-weight="700" fill="' + N + '">I ____ from Bandung.</text>' +
+        '<g class="k-up" style="--d:.5s">' + row(128, 'A', 'is', 'c3-a') + '</g><g class="k-up" style="--d:.65s">' + row(182, 'B', 'am', 'c3-b') + '</g><g class="k-up" style="--d:.8s">' + row(236, 'C', 'are', 'c3-c') + '</g>' +
+        '<text class="c3-fb" x="240" y="311" text-anchor="middle" font-size="16" font-weight="700" fill="#0B7A63">Setelah am, pakai from.</text>' + conf +
+        '<g class="c3-cur"><g class="c3-press"><path d="M0 0v26l7-6 5 11 5-2-5-11h9z" fill="#fff" stroke="' + N + '" stroke-width="2.5" stroke-linejoin="round"/></g></g></svg>';
+    }
+    if (k === 3) {
+      let bars = '';
+      const hs = [14, 26, 38, 22, 32, 16];
+      for (let i = 0; i < 6; i++) {
+        bars += '<rect class="c4-bar" style="--d:' + (i * 0.13).toFixed(2) + 's" x="' + (70 + i * 16) + '" y="' + (206 - hs[i] / 2) + '" width="8" height="' + hs[i] + '" rx="4" fill="#4B3FE0"/>';
+        bars += '<rect class="c4-bar" style="--d:' + (0.4 + i * 0.11).toFixed(2) + 's" x="' + (312 + i * 16) + '" y="' + (206 - hs[5 - i] / 2) + '" width="8" height="' + hs[5 - i] + '" rx="4" fill="#19B394"/>';
+      }
+      return head + '<g class="k-pop" style="--d:.05s">' + card(30, 300) + pill(56, 46, 148, 'Baca dengan suara') + '</g>' +
+        '<text class="k-in" style="--d:.4s" x="240" y="118" text-anchor="middle" font-size="32" font-weight="700" fill="' + N + '"><tspan class="c4-w a">I </tspan><tspan class="c4-w b">am </tspan><tspan class="c4-w c">from </tspan><tspan class="c4-w d">Bandung.</tspan></text>' +
+        bars + '<circle class="c4-ring" style="--d:0s" cx="240" cy="206" r="36" fill="none" stroke="#4B3FE0" stroke-width="3"/><circle class="c4-ring" style="--d:.8s" cx="240" cy="206" r="36" fill="none" stroke="#4B3FE0" stroke-width="3"/>' +
+        '<g class="c4-mic"><circle cx="240" cy="206" r="36" fill="#4B3FE0" stroke="' + N + '" stroke-width="3.5"/><rect x="231" y="189" width="18" height="30" rx="9" fill="#fff"/><path d="M224 208v3a16 16 0 0 0 32 0v-3M240 227v8" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/></g>' +
+        '<g class="c4-res"><rect x="86" y="266" width="308" height="42" rx="21" fill="#FFE1D8" stroke="#E5532F" stroke-width="3"/><text x="240" y="293" text-anchor="middle" font-size="16" font-weight="700" fill="#B8391C">Hampir! Ulangi kata: Bandung</text></g></svg>';
+    }
+    let cf = '';
+    const cols = ['#FF6B4A', '#FFC93C', '#19B394', '#8F86FF', '#FF8FB1', '#4FC3F7'];
+    for (let i = 0; i < 16; i++) cf += '<rect class="c5-cf" x="' + (24 + ((i * 59) % 440)) + '" y="-20" width="' + (i % 3 ? 8 : 6) + '" height="' + (i % 3 ? 12 : 6) + '" rx="2" fill="' + cols[i % 6] + '" style="--d:' + (2.2 + (i % 8) * 0.28).toFixed(2) + 's;--s:' + (2.6 + (i % 5) * 0.35).toFixed(2) + 's;--r:' + ((i * 97) % 540 - 270) + 'deg"/>';
+    return head + '<g class="k-pop" style="--d:.05s">' + card(30, 300) + pill(56, 46, 110, 'Kuis singkat') + '</g>' +
+      '<circle cx="160" cy="176" r="64" fill="none" stroke="#EEF0FA" stroke-width="16"/>' +
+      '<circle class="c5-arc" cx="160" cy="176" r="64" fill="none" stroke="#19B394" stroke-width="16" stroke-linecap="round" stroke-dasharray="402.1" stroke-dashoffset="80.4" transform="rotate(-90 160 176)"/>' +
+      '<text class="k-in" style="--d:1.2s" x="160" y="192" text-anchor="middle" font-size="44" font-weight="700" fill="' + N + '">4/5</text>' +
+      '<text class="k-in" style="--d:1.4s" x="160" y="278" text-anchor="middle" font-size="16" font-weight="700" fill="#4A4F73">4 dari 5 benar</text>' +
+      cbStar(290, 128, 22, 1.5) + cbStar(342, 128, 22, 1.9) + cbStar(394, 128, 22, 2.3) +
+      '<text class="k-up" style="--d:2.6s" x="342" y="196" text-anchor="middle" font-size="28" font-weight="700" fill="' + N + '">Mantap!</text>' +
+      '<text class="k-up" style="--d:2.8s" x="342" y="222" text-anchor="middle" font-size="17" font-weight="600" fill="#4A4F73">Nilai 80%</text>' +
+      '<g class="k-pop" style="--d:3.1s"><rect x="262" y="242" width="160" height="36" rx="18" fill="#D8F5EA" stroke="#19B394" stroke-width="2.5"/><text x="342" y="266" text-anchor="middle" font-size="15" font-weight="700" fill="#0B7A63">Pelajaran selesai</text></g>' +
+      cf + '</svg>';
+  }
+  function cbSection(btnHtml) {
+    const i = CB.i;
+    const items = CB_STEPS.map((s, k) =>
+      '<button type="button" class="cb-step' + (k === i ? ' on' : '') + (k < i ? ' done' : '') + '" data-act="cbGo" data-i="' + k + '" aria-pressed="' + (k === i) + '" style="--c:' + s[2] + ';--f:' + s[3] + '">' +
+      '<span class="cb-n" aria-hidden="true">' + (k + 1) + '</span><span class="cb-tx"><strong>' + s[0] + '</strong><span>' + s[1] + '</span></span><span class="cb-fill" aria-hidden="true"></span></button>').join('');
+    const scenes = CB_STEPS.map((s, k) => '<div class="cb-scene s' + k + (k === i ? ' on' : '') + '" data-k="' + k + '">' + cbScene(k) + '</div>').join('');
+    return '<section id="cara" class="container section"><div class="sec-head"><span class="eyebrow">Cara belajar</span><h2>Satu pelajaran, lima langkah singkat</h2><p class="muted" style="margin-top:10px;max-width:640px">Sekitar 10 menit per pelajaran, pas diselipkan di sela sekolah atau kuliah. Begini rasanya belajar di sini:</p></div>' +
+      '<div id="cb" class="cb' + (CB.hold ? ' hold' : '') + '" data-i="' + i + '"><div class="cb-list" role="group" aria-label="Lima langkah belajar">' + items + '<div class="cb-cta">' + btnHtml + '</div></div>' +
+      '<div class="cb-right"><div class="cb-stage">' + scenes + '</div><div class="cb-ctl"><span class="muted">Klik langkah untuk melihat contohnya.</span><button type="button" class="cb-pause" data-act="cbToggle" aria-pressed="' + CB.hold + '">' + (CB.hold ? 'Putar animasi' : 'Jeda animasi') + '</button></div></div></div></section>';
+  }
+  function cbSet(i) {
+    CB.i = i;
+    const el = document.getElementById('cb'); if (!el) return;
+    el.setAttribute('data-i', i);
+    el.querySelectorAll('.cb-step').forEach((b, k) => { b.classList.toggle('on', k === i); b.classList.toggle('done', k < i); b.setAttribute('aria-pressed', String(k === i)); });
+    el.querySelectorAll('.cb-scene').forEach((s, k) => s.classList.toggle('on', k === i));
+  }
+  function cbInit() {
+    if (CB.io) { CB.io.disconnect(); CB.io = null; }
+    const el = document.getElementById('cb'); if (!el) return;
+    if (!('IntersectionObserver' in window)) { el.classList.add('live'); return; }
+    CB.io = new IntersectionObserver((es) => es.forEach((e) => el.classList.toggle('live', e.isIntersecting)), { threshold: 0.3 });
+    CB.io.observe(el);
+  }
+  document.addEventListener('animationend', (e) => {
+    const t = e.target;
+    if (t && t.classList && t.classList.contains('cb-fill') && t.closest('.cb-step.on')) cbSet((CB.i + 1) % CB_STEPS.length);
+  });
+
+  /* ---------- spanduk halaman + penanda masuk bertahap ---------- */
+  let PGF = true;
+  window.addEventListener('hashchange', () => { PGF = true; });
+  function pgEnter() { const e = PGF; PGF = false; return e ? ' pg-enter' : ''; }
+  function pgHero(o) {
+    const m = o.mood === 'right' ? 'happy' : (o.mood === 'wrong' ? 'oops' : 'think');
+    return '<section class="qz-hero pg-hero ' + (o.tone || '') + '">' + qDeco() + '<div class="qz-hero-txt"><h1 id="main-title" tabindex="-1">' + o.title + '</h1>' +
+      (o.sub ? '<p class="pg-sub">' + o.sub + '</p>' : '') + (o.actions ? '<div class="qz-tools no-print">' + o.actions + '</div>' : '') + '</div>' +
+      '<div class="qz-mascot qx-mas m-' + m + ' no-print" aria-hidden="true"><p class="qz-says">' + esc(o.say) + '</p>' + qMascot(m, 120) + '</div></section>';
+  }
+
   /* ---------- halaman: masuk / daftar ---------- */
   function authView(query) {
     const next = query.lesson ? '#pelajaran-' + query.lesson : '';
-    return header(['masuk']) + '<main id="main" class="page narrow"><h1 id="main-title" tabindex="-1">Masuk atau buat akun gratis</h1>' +
-      '<div class="notice">Versi lokal: akun hanya tersimpan di browser komputer ini, tanpa kata sandi. Login sungguhan dengan kata sandi dibuat di tahap berikutnya.</div>' +
-      '<div class="card card-shadow"><h2 style="font-size:22px;margin-bottom:14px">Buat akun gratis</h2>' +
+    return header(['masuk']) + '<main id="main" class="page wide pg-auth' + pgEnter() + '">' +
+      pgHero({ tone: 'tone-sun', title: '<span class="t1">Masuk</span> atau <span class="t2">buat akun</span> <span class="t3">gratis</span>',
+        sub: 'Versi lokal: akun hanya tersimpan di browser komputer ini, tanpa kata sandi. Login sungguhan dengan kata sandi dibuat di tahap berikutnya.', mood: 'think', say: 'Halo! Isi nama dan emailmu, lalu langsung belajar.' }) +
+      '<div class="auth-grid"><div class="card card-shadow acard reg"><div class="dc-head"><span class="dc-ico" aria-hidden="true">🎒</span><h2>Buat akun gratis</h2></div>' +
+      '<ul class="auth-perks" aria-label="Yang kamu dapat"><li>✓ Kemajuan belajar tersimpan</li><li>✓ Laporan hasil belajar</li><li>✓ Gratis</li></ul>' +
       '<form class="form" data-form="register" data-next="' + esc(next) + '" novalidate>' +
         '<div class="field"><label for="reg-name">Nama panggilan</label><input id="reg-name" type="text" autocomplete="nickname" maxlength="40" required></div>' +
         '<div class="field"><label for="reg-email">Email</label><input id="reg-email" type="email" autocomplete="email" required></div>' +
         '<p class="err" id="reg-err" role="alert"></p>' +
         '<button class="btn btn-primary" type="submit">Buat akun gratis</button></form></div>' +
-      '<div class="card"><h2 style="font-size:22px;margin-bottom:14px">Sudah punya akun di komputer ini?</h2>' +
+      '<div class="card card-shadow acard log"><div class="dc-head"><span class="dc-ico" aria-hidden="true">👋</span><h2>Sudah punya akun di komputer ini?</h2></div>' +
+      '<p class="muted" style="margin:0">Masukkan email yang dulu kamu pakai untuk melanjutkan belajar.</p>' +
       '<form class="form" data-form="login" data-next="' + esc(next) + '" novalidate>' +
         '<div class="field"><label for="log-email">Email</label><input id="log-email" type="email" autocomplete="email" required></div>' +
         '<p class="err" id="log-err" role="alert"></p>' +
-        '<button class="btn" type="submit">Masuk</button></form></div></main>' + FOOT;
+        '<button class="btn" type="submit">Masuk</button></form></div></div></main>' + FOOT;
   }
 
   /* ---------- halaman: dashboard ---------- */
@@ -1198,10 +1327,75 @@
   function qLabel(n, part) {
     return '<p class="q-label"><span class="q-no">Soal ' + (P.exIdx + 1) + ' dari ' + n + '</span>' + (part ? '<span class="q-sep"> · </span><span class="q-part">' + esc(part) + '</span>' : '') + '</p>';
   }
-  function exDots(n) {
+  /* ---------- tampilan soal yang hidup: maskot, jalur kemajuan, konfeti ---------- */
+  function qMascot(mood, size) {
+    const N = '#1F2340';
+    let eyes; let mouth; let extra = '';
+    if (mood === 'happy') {
+      eyes = '<path d="M30 47q7-11 14 0M56 47q7-11 14 0" fill="none" stroke="' + N + '" stroke-width="4.5" stroke-linecap="round"/>';
+      mouth = '<path d="M38 59q12 24 24 0z" fill="' + N + '" stroke="' + N + '" stroke-width="3" stroke-linejoin="round"/><path d="M43 69q7 6 14 0" fill="#FF6B4A"/>';
+      extra = '<g class="m-sp"><path class="s1" d="M10 24l2.4 5.6 5.6 2.4-5.6 2.4L10 40l-2.4-5.6L2 32l5.6-2.4z" fill="#FF8FB1" stroke="' + N + '" stroke-width="1.8" stroke-linejoin="round"/>' +
+        '<path class="s2" d="M90 40l2 4.6 4.6 2-4.6 2-2 4.6-2-4.6-4.6-2 4.6-2z" fill="#6155F2" stroke="' + N + '" stroke-width="1.6" stroke-linejoin="round"/></g>';
+    } else if (mood === 'oops') {
+      eyes = '<g class="m-eyes"><ellipse cx="37" cy="48" rx="8" ry="9" fill="#fff" stroke="' + N + '" stroke-width="2.5"/><ellipse cx="63" cy="48" rx="8" ry="9" fill="#fff" stroke="' + N + '" stroke-width="2.5"/><circle cx="37" cy="52" r="4" fill="' + N + '"/><circle cx="63" cy="52" r="4" fill="' + N + '"/></g>' +
+        '<path d="M28 41l15-6M72 41l-15-6" stroke="' + N + '" stroke-width="3.5" stroke-linecap="round"/>';
+      mouth = '<path d="M41 71q4.5-5 9 0t9 0" fill="none" stroke="' + N + '" stroke-width="3.5" stroke-linecap="round"/>';
+      extra = '<path class="m-drop" d="M84 36q-7 10 0 14q7-4 0-14z" fill="#7DD3FC" stroke="' + N + '" stroke-width="2.2" stroke-linejoin="round"/>';
+    } else {
+      eyes = '<g class="m-eyes"><ellipse cx="37" cy="48" rx="8" ry="9" fill="#fff" stroke="' + N + '" stroke-width="2.5"/><ellipse cx="63" cy="48" rx="8" ry="9" fill="#fff" stroke="' + N + '" stroke-width="2.5"/><circle class="m-pup" cx="40" cy="45" r="4" fill="' + N + '"/><circle class="m-pup" cx="66" cy="45" r="4" fill="' + N + '"/></g>';
+      mouth = '<path d="M42 66q8 6 16 0" fill="none" stroke="' + N + '" stroke-width="3.5" stroke-linecap="round"/>';
+      extra = '<g class="m-q"><circle cx="86" cy="22" r="11" fill="#fff" stroke="' + N + '" stroke-width="2.5"/><text x="86" y="27.5" text-anchor="middle" font-family="Poppins,Segoe UI,sans-serif" font-weight="800" font-size="15" fill="' + N + '">?</text></g>';
+    }
+    return '<svg viewBox="0 0 100 100" width="' + (size || 92) + '" height="' + (size || 92) + '" focusable="false" aria-hidden="true">' +
+      '<ellipse cx="36" cy="93" rx="10" ry="5" fill="#FF8A00" stroke="' + N + '" stroke-width="3"/><ellipse cx="64" cy="93" rx="10" ry="5" fill="#FF8A00" stroke="' + N + '" stroke-width="3"/>' +
+      '<g class="m-body"><ellipse class="m-arm l" cx="15" cy="64" rx="7" ry="11" fill="#FFB300" stroke="' + N + '" stroke-width="3"/><ellipse class="m-arm r" cx="85" cy="64" rx="7" ry="11" fill="#FFB300" stroke="' + N + '" stroke-width="3"/>' +
+      '<ellipse cx="50" cy="60" rx="35" ry="32" fill="#FFC93C" stroke="' + N + '" stroke-width="3.5"/><path d="M23 50q4-14 18-19" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="4.5" stroke-linecap="round"/>' +
+      '<circle cx="27" cy="62" r="5.5" fill="#FF9E8A" opacity=".65"/><circle cx="73" cy="62" r="5.5" fill="#FF9E8A" opacity=".65"/>' + eyes + mouth +
+      '<g class="m-cap"><path d="M20 27L50 13l30 14-30 13z" fill="#6155F2" stroke="' + N + '" stroke-width="3" stroke-linejoin="round"/><path d="M80 27v13" stroke="#FFC93C" stroke-width="3.2" stroke-linecap="round"/><circle cx="80" cy="42" r="3" fill="#FFC93C" stroke="' + N + '" stroke-width="1.6"/></g></g>' +
+      extra + '</svg>';
+  }
+  const QSAY = {
+    think: ['Ayo, pilih!', 'Pikir dulu ya', 'Kamu pasti bisa!', 'Santai saja', 'Baca pelan-pelan'],
+    right: ['Keren!', 'Mantap!', 'Pintar!', 'Hebat!', 'Yeay!'],
+    wrong: ['Semangat!', 'Hampir!', 'Tidak apa-apa', 'Coba lagi nanti', 'Terus belajar!']
+  };
+  function qHead(mood, k, inner) {
+    const m = mood === 'right' ? 'happy' : (mood === 'wrong' ? 'oops' : 'think');
+    const say = QSAY[mood] || QSAY.think;
+    return '<div class="qx-head"><div class="qx-mas m-' + m + '" aria-hidden="true">' + qMascot(m) + '<span class="qx-say">' + esc(say[k % say.length]) + '</span></div><div class="qx-bubble">' + inner + '</div></div>';
+  }
+  function qDeco() { return '<div class="qx-deco" aria-hidden="true"><i class="d1"></i><i class="d2"></i><i class="d3"></i><i class="d4"></i><i class="d5"></i></div>'; }
+  function qTop(n) {
     let d = '';
-    for (let i = 0; i < n; i++) d += '<i class="' + (i < P.exIdx ? 'done' : (i === P.exIdx ? 'now' : '')) + '"></i>';
-    return '<div class="ex-dots" aria-hidden="true">' + d + '</div>';
+    for (let i = 0; i < n; i++) {
+      const r = P.results[i];
+      d += '<i class="' + [i === P.exIdx ? 'now' : '', r === true ? 'done' : '', r === false ? 'miss' : ''].join(' ').replace(/\s+/g, ' ').trim() + '"></i>';
+    }
+    const okN = P.results.filter(Boolean).length;
+    let streak = 0;
+    for (let k = (P.results[P.exIdx] !== undefined ? P.exIdx : P.exIdx - 1); k >= 0 && P.results[k] === true; k--) streak++;
+    return '<div class="qx-top"><div class="qx-track" aria-hidden="true">' + d + '</div><div class="qx-chips"><span class="qx-chip star"><span aria-hidden="true">⭐</span>' + okN + ' benar</span>' +
+      (streak >= 2 ? '<span class="qx-chip fire"><span aria-hidden="true">🔥</span>' + streak + ' beruntun</span>' : '') + '</div></div>';
+  }
+  /* semburan konfeti: dibuat di atas halaman supaya selalu terlihat, lalu dihapus sendiri */
+  function burst(el, n) {
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const r = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+      const x = r ? r.left + r.width / 2 : window.innerWidth / 2;
+      const y = r ? Math.min(Math.max(r.top + r.height / 2, 90), window.innerHeight - 90) : window.innerHeight * 0.35;
+      const box = document.createElement('div');
+      box.className = 'qx-burst'; box.setAttribute('aria-hidden', 'true');
+      box.style.left = Math.round(x) + 'px'; box.style.top = Math.round(y) + 'px';
+      const cols = ['#FF6B4A', '#FFC93C', '#19B394', '#6155F2', '#FF8FB1', '#4FC3F7'];
+      let h = '';
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + (i % 3) * 0.35; const dist = 70 + ((i * 37) % 120);
+        h += '<i style="--x:' + Math.round(Math.cos(a) * dist) + 'px;--y:' + Math.round(Math.sin(a) * dist - 40) + 'px;--g:' + (80 + ((i * 13) % 90)) + 'px;--r:' + (((i * 83) % 720) - 360) + 'deg;--c:' + cols[i % cols.length] + ';--dl:' + ((i % 5) * 28) + 'ms' + (i % 4 === 0 ? ';width:9px;height:9px;border-radius:50%' : '') + '"></i>';
+      }
+      box.innerHTML = h; document.body.appendChild(box);
+      setTimeout(() => { if (box.parentNode) box.parentNode.removeChild(box); }, 2100);
+    } catch (e) { /* efek tidak wajib */ }
   }
   function fillsetView(lesson, src, ex) {
     const n = lesson[src].length;
@@ -1225,7 +1419,8 @@
     const lastQ = P.exIdx === n - 1;
     const nav = '<div class="ex-nav"><button type="button" class="btn" data-act="prevEx"' + (P.exIdx === 0 ? ' disabled' : '') + ' aria-label="Soal sebelumnya">' + ICON.back(18) + ' Kembali</button>' +
       '<button type="button" class="btn' + (allDone ? ' btn-primary' : '') + '" data-act="nextEx" aria-label="' + (lastQ ? 'Lihat hasil' : 'Soal berikutnya') + '">' + (lastQ ? 'Lihat hasil' : 'Lanjut') + ' ' + ICON.next(18) + '</button></div>';
-    return '<section class="card card-shadow stack ext' + (P.exIdx % 4) + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext">' + exDots(n) + qLabel(n, ex.part) + '<p id="qtext" class="q-text">' + esc(ex.q) + '</p>' +
+    return '<section class="card card-shadow stack qx qx-fs ext' + (P.exIdx % 4) + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext">' + qDeco() + qTop(n) +
+      qHead(allDone ? 'right' : 'think', P.exIdx, qLabel(n, ex.part) + '<p id="qtext" class="q-text">' + esc(ex.q) + '</p>') +
       (ex.listen ? accentToggle() : '') + '<p class="fs-prog" aria-live="polite">Terjawab ' + answeredN + ' dari ' + total + (ex.listen ? ' kata' : ' kalimat') + '</p><ol class="fs-list">' + items + '</ol>' + nav + '</section>';
   }
 
@@ -1238,6 +1433,7 @@
     let body = '';
     const answered = P.status !== null;
     const enter = P.enter; P.enter = false;
+    const fx = P.fx; P.fx = null;
 
     if (ex.type === 'mc') {
       const order = shuffledIdx(ex.options.length, seedBase, false);
@@ -1249,7 +1445,7 @@
           else if (oi === P.picked) { cls += ' wrong'; tag = '<span class="tag">' + ICON.x(16) + 'Belum tepat</span>'; }
           else cls += ' dim';
         }
-        return '<button type="button" class="' + cls + '" data-act="choose" data-i="' + oi + '"' + (answered ? ' disabled' : '') + '><span class="opt-t"><i class="opt-l" aria-hidden="true">' + String.fromCharCode(65 + pos) + '</i><span>' + esc(ex.options[oi]) + '</span></span>' + tag + '</button>';
+        return '<button type="button" class="' + cls + '" style="--i:' + pos + '" data-act="choose" data-i="' + oi + '"' + (answered ? ' disabled' : '') + '><span class="opt-t"><i class="opt-l" aria-hidden="true">' + String.fromCharCode(65 + pos) + '</i><span>' + esc(ex.options[oi]) + '</span></span>' + tag + '</button>';
       }).join('') + '</div>';
     } else if (ex.type === 'fill') {
       body = '<div class="fill"><span>' + esc(ex.before || '') + '</span><label class="sr-only" for="fill-input">Jawabanmu</label><input id="fill-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" value="' + esc(P.value) + '"' + (answered ? ' readonly' : '') + '><span>' + esc(ex.after || '') + '</span></div>' +
@@ -1281,18 +1477,31 @@
     const lastQ = P.exIdx === n - 1;
     fb += '<div class="ex-nav"><button type="button" class="btn" data-act="prevEx"' + (P.exIdx === 0 ? ' disabled' : '') + ' aria-label="Soal sebelumnya">' + ICON.back(18) + ' Kembali</button>' +
       '<button type="button" class="btn' + (answered ? ' btn-primary' : '') + '" data-act="nextEx" aria-label="' + (lastQ ? 'Lihat hasil' : 'Soal berikutnya') + '">' + (lastQ ? 'Lihat hasil' : 'Lanjut') + ' ' + ICON.next(18) + '</button></div>';
-    return '<section class="card card-shadow stack ext' + (P.exIdx % 4) + (ex.type === 'mc' ? ' exq' : '') + (enter ? ' q-enter' : '') + '" aria-labelledby="qtext">' + exDots(n) + qLabel(n, ex.part) + '<p id="qtext" class="q-text">' + esc(ex.q) + '</p>' + (ex.say ? '<p class="ex-listen">' + sayX(ex.say) + '<span class="muted">Putar kalimatnya</span></p>' : '') +
+    const mood = answered ? (P.status === 'right' ? 'right' : 'wrong') : 'think';
+    return '<section class="card card-shadow stack qx ext' + (P.exIdx % 4) + (ex.type === 'mc' ? ' exq' : '') + (enter ? ' q-enter' : '') + (fx ? ' fx-' + fx : '') + '" aria-labelledby="qtext">' + qDeco() + qTop(n) +
+      qHead(mood, P.exIdx, qLabel(n, ex.part) + '<p id="qtext" class="q-text">' + esc(ex.q) + '</p>' + (ex.say ? '<p class="ex-listen">' + sayX(ex.say) + '<span class="muted">Putar kalimatnya</span></p>' : '')) +
       (ex.spell ? accentToggle() + listenRow(ex.spell) : '') + body + fb + '</section>';
   }
 
   function summaryView(lesson, step) {
     const right = P.results.filter(Boolean).length;
     const total = lesson[step.src].length;
-    const good = right / total >= 0.8;
+    const ratio = total ? right / total : 0;
+    const good = ratio >= 0.8;
     const isLast = step.key === 'ulas';
-    return '<section class="card card-shadow stack sum-g" aria-labelledby="hasil"><h2 id="hasil" style="font-size:22px">Hasil ' + step.label.toLowerCase() + '</h2><p class="score">' + right + ' dari ' + total + '</p>' +
-      '<p>' + (good ? 'Mantap! Kamu sudah menguasai bagian ini.' : 'Bagus, kamu sudah mencoba. Ulangi sekali lagi supaya makin lancar, atau lanjut kalau sudah merasa cukup.') + '</p>' +
-      '<div class="btn-row"><button type="button" class="btn" data-act="redo">Ulangi dari awal</button><button type="button" class="btn btn-primary" data-act="finishEx">' + (isLast ? 'Selesaikan pelajaran' : 'Lanjut: ' + STEPS[STEPS.indexOf(step) + 1].label) + '</button></div></section>';
+    const stars = ratio >= 0.8 ? 3 : (ratio >= 0.5 ? 2 : 1);
+    const C = 2 * Math.PI * 52;
+    const star = (on, i) => '<svg class="qs-star' + (on ? ' on' : '') + '" style="--k:' + i + '" viewBox="0 0 48 48" width="52" height="52" aria-hidden="true" focusable="false"><path d="M24 4l6.2 13.2 14.4 1.8-10.6 9.9 2.7 14.3L24 36.2 11.3 43.2 14 28.9 3.4 19l14.4-1.8z" stroke-linejoin="round"/></svg>';
+    const title = ratio === 1 ? 'Sempurna!' : (good ? 'Luar biasa!' : (ratio >= 0.5 ? 'Bagus sekali!' : 'Terus semangat!'));
+    const msg = good ? 'Mantap! Kamu sudah menguasai bagian ini.' : 'Bagus, kamu sudah mencoba. Ulangi sekali lagi supaya makin lancar, atau lanjut kalau sudah merasa cukup.';
+    return '<section class="card card-shadow stack sum-g qx qx-sum ext' + (good ? '1' : '0') + ' q-enter" aria-labelledby="hasil">' + qDeco() +
+      '<div class="qs-mas qx-mas m-' + (good ? 'happy' : 'think') + '" aria-hidden="true">' + qMascot(good ? 'happy' : 'think', 120) + '</div>' +
+      '<p class="qs-title">' + esc(title) + '</p><h2 id="hasil" style="font-size:22px">Hasil ' + esc(step.label.toLowerCase()) + '</h2>' +
+      '<div class="qs-ring"><svg viewBox="0 0 120 120" width="190" height="190" aria-hidden="true" focusable="false"><circle cx="60" cy="60" r="52" class="qs-trk"/><circle cx="60" cy="60" r="52" class="qs-bar" style="stroke-dasharray:' + C.toFixed(1) + ';--off:' + (C * (1 - ratio)).toFixed(1) + '" transform="rotate(-90 60 60)"/></svg>' +
+      '<p class="score">' + right + ' dari ' + total + '</p></div>' +
+      '<div class="qs-stars" role="img" aria-label="' + stars + ' dari 3 bintang">' + [1, 2, 3].map((i) => star(i <= stars, i)).join('') + '</div>' +
+      '<p class="qs-msg">' + esc(msg) + '</p>' +
+      '<div class="btn-row"><button type="button" class="btn" data-act="redo">Ulangi dari awal</button><button type="button" class="btn btn-primary" data-act="finishEx">' + (isLast ? 'Selesaikan pelajaran' : 'Lanjut: ' + esc(STEPS[STEPS.indexOf(step) + 1].label)) + '</button></div></section>';
   }
 
   /* ---------- kartu unduhan PPT (file ada di folder downloads) ---------- */
@@ -1638,7 +1847,7 @@
     return '<div class="rp-score"><div class="rp-score-top"><strong>' + label + '</strong><span>' + sc.right + ' dari ' + sc.total + ' benar <b class="rp-pct ' + lv[0] + '">' + pc + '%</b></span></div>' +
       '<div class="rp-bar ' + lv[0] + '" role="img" aria-label="' + label + ': ' + pc + ' persen, ' + lv[1] + '"><span style="width:' + pc + '%"></span></div><p class="rp-note">' + lv[1] + more + '</p></div>';
   }
-  function lessonReport(l) {
+  function lessonReport(l, idx) {
     const p = prog(l.id); const lock = gate(l);
     const started = Object.keys(p.stepsDone).length > 0;
     const sl = p.scores.latihan || null; const su = p.scores.ulas || null;
@@ -1657,7 +1866,7 @@
     const write = readN ? 'Sudah membaca <strong>' + readN + ' dari ' + l.apply.lines.length + ' kalimat</strong> dengan suara' + (readAvg !== null ? ', rata-rata terbaik <strong>' + readAvg + '%</strong> (perkiraan pengenal suara).' : '.') : 'Belum membaca dengan suara.';
     const links = lock ? '' : '<div class="btn-row no-print"><a class="btn btn-small" href="#pelajaran-' + l.id + '-' + (started ? stepFirstUndone(l) : 'pelajari') + '">' + (p.done ? 'Buka pelajaran' : (started ? 'Lanjutkan' : 'Mulai')) + '</a>' +
       (sl ? '<a class="btn btn-small btn-flat" href="#pelajaran-' + l.id + '-latihan">Ulangi Latihan</a>' : '') + (su ? '<a class="btn btn-small btn-flat" href="#pelajaran-' + l.id + '-ulas">Ulangi Ulas</a>' : '') + '</div>';
-    return '<section class="card rp-lesson stack" aria-labelledby="rp-' + l.id + '"><div class="rp-head"><div><p class="rp-no">' + unitOf(l) + ' ' + l.no + '</p><h2 id="rp-' + l.id + '">' + esc(l.title) + '</h2></div>' + chip + '</div>' +
+    return '<section class="card rp-lesson stack rp-c' + ((idx || 0) % 4) + '" aria-labelledby="rp-' + l.id + '"><div class="rp-head"><div><p class="rp-no">' + unitOf(l) + ' ' + l.no + '</p><h2 id="rp-' + l.id + '">' + esc(l.title) + '</h2></div>' + chip + '</div>' +
       '<ol class="rp-steps" aria-label="Langkah belajar">' + steps + '</ol>' +
       '<div class="rp-scores">' + scoreBlock('Latihan', sl) + scoreBlock('Ulas', su) + '</div>' +
       '<p class="rp-write"><strong>Praktikkan:</strong> ' + write + '</p><p class="rp-tip">' + tip + '</p>' + links + '</section>';
@@ -1670,17 +1879,22 @@
     const avg = total ? Math.round((right / total) * 100) : null;
     let readSent = 0; let readAll = 0;
     lessons.forEach((l, x) => { readAll += l.apply.lines.length; readSent += Object.keys((all[x].apply && all[x].apply.reads) || {}).length; });
-    const tile = (n, lab) => '<div class="rp-tile"><strong>' + n + '</strong><span>' + lab + '</span></div>';
-    return (multi ? '<h2 class="rp-course-title">' + esc(c.course.title) + '</h2>' : '') +
-      '<div class="rp-tiles">' + tile(doneCount(c) + ' dari ' + lessons.length, c.unit.toLowerCase() + ' selesai') + tile(avg === null ? '–' : avg + '%', 'nilai rata-rata Latihan dan Ulas') + tile(total ? right + ' dari ' + total : '–', 'soal dijawab benar') + tile(readSent + ' dari ' + readAll, 'kalimat sudah dibaca dengan suara') + '</div>' +
-      lessons.map(lessonReport).join('');
+    const tile = (n, lab, ico, tn) => '<div class="rp-tile t-' + tn + '"><span class="rp-ico" aria-hidden="true">' + ico + '</span><div><strong>' + n + '</strong><span>' + lab + '</span></div></div>';
+    return (multi ? '<h2 class="rp-course-title"><span aria-hidden="true">' + (c === COURSES.speaking ? '🗣️' : '📘') + '</span> ' + esc(c.course.title) + '</h2>' : '') +
+      '<div class="rp-tiles">' + tile(doneCount(c) + ' dari ' + lessons.length, c.unit.toLowerCase() + ' selesai', '🏁', 'y') + tile(avg === null ? '–' : avg + '%', 'nilai rata-rata Latihan dan Ulas', '⭐', 'm') + tile(total ? right + ' dari ' + total : '–', 'soal dijawab benar', '✅', 'l') + tile(readSent + ' dari ' + readAll, 'kalimat sudah dibaca dengan suara', '🎤', 'c') + '</div>' +
+      '<div class="rp-grid">' + lessons.map((l, x) => lessonReport(l, x)).join('') + '</div>';
   }
   function reportView() {
     const u = user();
     const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    return header(['laporan']) + '<main id="main" class="page narrow"><div class="stack" style="gap:6px"><h1 id="main-title" tabindex="-1">Laporan hasil belajar</h1>' +
-      '<p class="muted">' + esc(u.name) + ' · diperbarui ' + today + '</p></div>' +
-      '<div class="btn-row no-print"><button type="button" class="btn btn-primary" data-act="printReport">Cetak atau simpan PDF</button><a class="btn" href="#dashboard">Kembali ke beranda</a></div>' +
+    let r = 0; let t = 0;
+    [COURSES.speaking, COURSES.grammar].forEach((c) => c.lessons.forEach((l) => { const p = prog(l.id); ['latihan', 'ulas'].forEach((k) => { if (p.scores[k]) { r += p.scores[k].right; t += p.scores[k].total; } }); }));
+    const avg = t ? Math.round((r / t) * 100) : null;
+    const say = avg === null ? 'Belum ada nilai. Yuk mulai latihan pertamamu!' : (avg >= 80 ? 'Hebat! Rata-rata nilaimu ' + avg + '%.' : (avg >= 60 ? 'Lumayan! Rata-rata ' + avg + '%. Ulangi supaya naik.' : 'Rata-rata ' + avg + '%. Tenang, ulangi pelan-pelan.'));
+    return header(['laporan']) + '<main id="main" class="page wide pg-report' + pgEnter() + '">' +
+      pgHero({ tone: 'tone-lav', title: '<span class="t1">Laporan</span> <span class="t2">hasil</span> <span class="t3">belajar</span>', sub: esc(u.name) + ' · diperbarui ' + today,
+        actions: '<button type="button" class="btn btn-small btn-primary" data-act="printReport">Cetak atau simpan PDF</button><a class="btn btn-small" href="#dashboard">Kembali ke beranda</a>',
+        mood: avg !== null && avg >= 80 ? 'right' : 'think', say: say }) +
       reportCourse(COURSES.speaking, true) + reportCourse(COURSES.grammar, true) +
       '<p class="muted rp-foot">Nilai diambil dari percobaan terakhir. Data tersimpan di browser ini saja.</p></main>' + FOOT;
   }
@@ -1691,19 +1905,24 @@
   function dataView() {
     const u = user();
     const accounts = Object.keys(DB.accounts);
-    return header(['data']) + '<main id="main" class="page narrow"><h1 id="main-title" tabindex="-1">Data saya</h1>' +
-      '<div class="card stack"><h2 style="font-size:20px">Akun</h2><p>' + (u ? 'Masuk sebagai <strong>' + esc(u.name) + '</strong> (' + esc(u.email) + '). Pelajaran selesai: ' + doneCount() + ' dari ' + LESSONS.length + '.' : 'Kamu belum masuk.') + '</p>' +
-      '<p class="muted" style="font-size:15px">Akun yang ada di browser ini: ' + accounts.length + '. Semua data tersimpan di browser ini saja, tidak dikirim ke mana pun.</p></div>' +
-      '<div class="card stack"><h2 style="font-size:20px">Suara pelafalan</h2><p class="muted" style="font-size:15px">Pilih aksen, kecepatan, dan suara untuk semua tombol dengar di setiap pelajaran.</p><div id="audio-data"></div></div>' +
-      '<div class="card stack"><h2 style="font-size:20px">Mode uji</h2><label class="switch"><input type="checkbox" data-bind="test-mode"' + (DB.testMode ? ' checked' : '') + '><span><strong>Buka semua pelajaran premium di komputer ini.</strong><br><span class="muted" style="font-size:15px">Hanya untuk pengujian. Di website sungguhan, pelajaran premium terbuka setelah pembayaran lunas.</span></span></label></div>' +
-      '<div class="card stack"><h2 style="font-size:20px">Cadangan data</h2><p class="muted" style="font-size:15px">Data di browser bisa hilang kalau riwayat browser dibersihkan. Unduh cadangan secara berkala.</p>' +
-      '<div class="btn-row"><button type="button" class="btn" data-act="export">Unduh cadangan (.json)</button><label class="btn" style="cursor:pointer">Pulihkan dari cadangan<input type="file" accept="application/json,.json" data-bind="import" class="sr-only"></label></div>' +
-      (showBackup ? '<p class="muted" style="font-size:15px">Kalau unduhan tidak berjalan di tampilan ini, salin teks di bawah dan simpan di file catatan.</p><label class="sr-only" for="backup-text">Teks cadangan</label><textarea class="write" id="backup-text" readonly>' + esc(JSON.stringify(DB)) + '</textarea><div><button type="button" class="btn btn-small" data-act="copyBackup">Salin teks cadangan</button></div>' : '') +
-      '<details class="model"><summary>Pulihkan dari teks cadangan</summary><label class="sr-only" for="restore-text">Teks cadangan</label><textarea class="write" id="restore-text" placeholder="Tempel teks cadangan di sini"></textarea><div style="margin-top:10px"><button type="button" class="btn btn-small" data-act="restoreText">Pulihkan</button></div></details></div>' +
-      '<div class="card stack"><h2 style="font-size:20px">Hapus data</h2><p class="muted" style="font-size:15px">Menghapus semua akun dan kemajuan belajar di browser ini. Tidak bisa dibatalkan.</p>' +
-      (confirmReset ? '<div class="btn-row"><button type="button" class="btn btn-primary" style="background:#A3200B" data-act="reset">Ya, hapus semuanya</button><button type="button" class="btn" data-act="cancelReset">Batal</button></div>' : '<div><button type="button" class="btn" data-act="askReset">Hapus semua data</button></div>') + '</div></main>' + FOOT;
+    const dc = (ico, tn, h, inner, cls) => '<div class="card card-shadow stack dcard ' + tn + (cls ? ' ' + cls : '') + '"><div class="dc-head"><span class="dc-ico" aria-hidden="true">' + ico + '</span><h2>' + h + '</h2></div>' + inner + '</div>';
+    return header(['data']) + '<main id="main" class="page wide pg-data' + pgEnter() + '">' +
+      pgHero({ tone: 'tone-mint', title: '<span class="t1">Data</span> <span class="t3">saya</span>', sub: 'Atur suara, cadangkan, atau hapus data belajarmu. Semua tersimpan di browser ini saja.', mood: 'think', say: 'Datamu aman di browser ini. Atur sesukamu!' }) +
+      '<div class="data-grid">' +
+      dc('👤', 'd-y', 'Akun', '<p>' + (u ? 'Masuk sebagai <strong>' + esc(u.name) + '</strong> (' + esc(u.email) + '). Pelajaran selesai: ' + doneCount() + ' dari ' + LESSONS.length + '.' : 'Kamu belum masuk.') + '</p>' +
+        '<p class="muted" style="font-size:15px">Akun yang ada di browser ini: ' + accounts.length + '. Semua data tersimpan di browser ini saja, tidak dikirim ke mana pun.</p>') +
+      dc('🧪', 'd-l', 'Mode uji', '<label class="switch"><input type="checkbox" data-bind="test-mode"' + (DB.testMode ? ' checked' : '') + '><span><strong>Buka semua pelajaran premium di komputer ini.</strong><br><span class="muted" style="font-size:15px">Hanya untuk pengujian. Di website sungguhan, pelajaran premium terbuka setelah pembayaran lunas.</span></span></label>') +
+      dc('🔊', 'd-m', 'Suara pelafalan', '<p class="muted" style="font-size:15px">Pilih aksen, kecepatan, dan suara untuk semua tombol dengar di setiap pelajaran.</p><div id="audio-data"></div>', 'span2') +
+      dc('💾', 'd-c', 'Cadangan data', '<p class="muted" style="font-size:15px">Data di browser bisa hilang kalau riwayat browser dibersihkan. Unduh cadangan secara berkala.</p>' +
+        '<div class="btn-row"><button type="button" class="btn" data-act="export">Unduh cadangan (.json)</button><label class="btn" style="cursor:pointer">Pulihkan dari cadangan<input type="file" accept="application/json,.json" data-bind="import" class="sr-only"></label></div>' +
+        (showBackup ? '<p class="muted" style="font-size:15px">Kalau unduhan tidak berjalan di tampilan ini, salin teks di bawah dan simpan di file catatan.</p><label class="sr-only" for="backup-text">Teks cadangan</label><textarea class="write" id="backup-text" readonly>' + esc(JSON.stringify(DB)) + '</textarea><div><button type="button" class="btn btn-small" data-act="copyBackup">Salin teks cadangan</button></div>' : '') +
+        '<details class="model"><summary>Pulihkan dari teks cadangan</summary><label class="sr-only" for="restore-text">Teks cadangan</label><textarea class="write" id="restore-text" placeholder="Tempel teks cadangan di sini"></textarea><div style="margin-top:10px"><button type="button" class="btn btn-small" data-act="restoreText">Pulihkan</button></div></details>') +
+      dc('🗑️', 'd-r', 'Hapus data', '<p class="muted" style="font-size:15px">Menghapus semua akun dan kemajuan belajar di browser ini. Tidak bisa dibatalkan.</p>' +
+        (confirmReset ? '<div class="btn-row"><button type="button" class="btn btn-primary" style="background:#A3200B" data-act="reset">Ya, hapus semuanya</button><button type="button" class="btn" data-act="cancelReset">Batal</button></div>' : '<div><button type="button" class="btn" data-act="askReset">Hapus semua data</button></div>')) +
+      '</div></main>' + FOOT;
   }
-  let QZ = { tab: 'sp', s: { sp: { open: {}, pick: {} }, pc: { open: {}, pick: {} } }, big: false };
+  let QZ = { tab: 'sp', s: { sp: { open: {}, pick: {} }, pc: { open: {}, pick: {} } }, big: false, fresh: true, fx: null, last: null };
+  window.addEventListener('hashchange', () => { QZ.fresh = true; QZ.fx = null; });
   function quizNow() {
     const tops = (window.GRAMMAR && window.GRAMMAR.quiz && window.GRAMMAR.quiz.topics) || [];
     const T = tops.find((x) => x.id === QZ.tab) || tops[0];
@@ -1715,6 +1934,11 @@
     if (!Q) return header(['kuis']) + '<main id="main" class="page narrow"><p>Kuis belum tersedia.</p></main>' + FOOT;
     const n = Q.items.length;
     const picked = Object.keys(st.pick).length;
+    const enter = QZ.fresh; QZ.fresh = false;
+    const fx = QZ.fx; QZ.fx = null;
+    const rightN = Q.items.filter((it, i) => st.pick[i] === it.answer).length;
+    const done = picked === n;
+    const goodAll = done && rightN / n >= 0.8;
     const items = Q.items.map((it, i) => {
       const open = !!st.open[i];
       const pk = st.pick[i];
@@ -1727,28 +1951,70 @@
         return '<button type="button" class="' + cls + '" data-act="qzPick" data-i="' + i + '" data-o="' + oi + '"' + (open ? ' disabled' : '') + '><i aria-hidden="true">' + String.fromCharCode(65 + oi) + '</i><span>' + esc(o) + '</span>' + (open && oi === it.answer ? '<b class="qz-ck" aria-hidden="true">✓</b>' : '') + '</button>';
       }).join('');
       let ans = '';
+      let stamp = '';
       if (open) {
         const head = pk === undefined ? 'Jawabannya' : (pk === it.answer ? 'Tepat!' : 'Belum tepat. Jawabannya');
         ans = '<div class="qz-ans" role="status"><p class="qz-ansh">' + head + ': <b>' + String.fromCharCode(65 + it.answer) + '. ' + esc(it.options[it.answer]) + '</b></p>' + (it.rule ? fmlChips(it.rule) : '') +
           '<div class="ent-tip"><span class="ent-tip-ico" aria-hidden="true">💡</span><p>' + rich(it.why) + '</p></div></div>';
+        stamp = pk === undefined ? '<span class="qz-stamp seen" aria-hidden="true">Dilihat</span>' : (pk === it.answer ? '<span class="qz-stamp right" aria-hidden="true">✓ Benar</span>' : '<span class="qz-stamp wrong" aria-hidden="true">Belum tepat</span>');
       }
       const setHead = Q.sets && (i === 0 || Q.items[i - 1].set !== it.set)
         ? '<li class="qz-set"><span class="qz-set-t">' + esc(Q.sets[it.set]) + '</span><button type="button" class="btn btn-small" data-act="qzSet" data-s="' + it.set + '">' +
           (Q.items.every((x, k) => x.set !== it.set || st.open[k]) ? 'Tutup set ini' : 'Buka jawaban set ini') + '</button></li>' : '';
-      return setHead + '<li class="qz-q qt' + (i % 4) + '"><div class="qz-qh"><span class="qz-num">' + (i + 1) + '</span><p class="qz-text">' + esc(parts[0]) + blank + esc(parts[1] || '') + '</p></div>' +
+      const state = open ? (pk === undefined ? ' is-seen' : (pk === it.answer ? ' is-right' : ' is-wrong')) : '';
+      const isFx = fx && fx.i === i ? ' fx fx-' + fx.k : '';
+      return setHead + '<li class="qz-q qt' + (i % 4) + state + isFx + '" style="--i:' + i + '">' + stamp + '<div class="qz-qh"><span class="qz-num">' + (i + 1) + '</span><p class="qz-text">' + esc(parts[0]) + blank + esc(parts[1] || '') + '</p></div>' +
         '<div class="qz-opts" role="group" aria-label="Pilihan jawaban nomor ' + (i + 1) + '">' + opts + '</div>' +
         (open ? '' : '<button type="button" class="btn btn-small qz-open" data-act="qzOpen" data-i="' + i + '">Buka jawaban</button>') + ans + '</li>';
     }).join('');
     const allOpen = Object.keys(st.open).length === n;
-    const score = picked === n ? Q.items.filter((it, i) => st.pick[i] === it.answer).length : null;
-    return header(['kuis']) + '<main id="main" class="page quiz' + (QZ.big ? ' big' : '') + '"><section class="qz-hero"><h1 id="main-title" tabindex="-1"><span class="t1">Basic</span> <span class="t2">Grammar</span> <span class="t3">Quiz</span></h1>' +
+
+    /* jalur kemajuan: satu pil per soal */
+    let firstOpen = -1;
+    let pills = '';
+    for (let i = 0; i < n; i++) {
+      const pk = st.pick[i];
+      let c = '';
+      if (pk !== undefined) c = pk === Q.items[i].answer ? 'done' : 'miss';
+      else if (st.open[i]) c = 'seen';
+      else if (firstOpen < 0) { firstOpen = i; c = 'now'; }
+      pills += '<i class="' + c + '"></i>';
+    }
+    const bar = '<div class="qz-bar" role="status" aria-live="polite"><div class="qx-track" aria-hidden="true">' + pills + '</div><div class="qx-chips"><span class="qx-chip"><span aria-hidden="true">✏️</span>' + picked + ' dari ' + n + '</span>' +
+      '<span class="qx-chip star"><span aria-hidden="true">⭐</span>' + rightN + ' benar</span>' + (done ? '<button type="button" class="qx-chip qz-goto" data-act="qzGoScore">Lihat skor ↓</button>' : '') + '</div></div>';
+
+    /* maskot di bagian atas */
+    const mood = done ? (goodAll ? 'right' : 'think') : (QZ.last === 'right' ? 'right' : (QZ.last === 'wrong' ? 'wrong' : 'think'));
+    const m = mood === 'right' ? 'happy' : (mood === 'wrong' ? 'oops' : 'think');
+    let say;
+    if (done) say = rightN === n ? 'Sempurna! Semua jawabanmu benar!' : (goodAll ? 'Luar biasa! Kamu sudah paham materi ini.' : 'Kuis selesai! Baca lagi penjelasannya, lalu coba ulang.');
+    else if (QZ.last === 'right') say = ['Keren!', 'Mantap!', 'Pintar!', 'Hebat!', 'Yeay, benar!'][picked % 5];
+    else if (QZ.last === 'wrong') say = ['Hampir! Baca penjelasannya ya.', 'Tidak apa-apa, itu cara belajar.', 'Semangat! Coba soal berikutnya.'][picked % 3];
+    else say = 'Ayo kerjakan! Pilih satu jawaban di tiap soal.';
+    const fxHero = fx && (fx.k === 'right' || fx.k === 'wrong') ? ' fx-' + fx.k : '';
+
+    const stars = (rightN / n) >= 0.8 ? 3 : ((rightN / n) >= 0.5 ? 2 : 1);
+    const C = 2 * Math.PI * 52;
+    const star = (on, k) => '<svg class="qs-star' + (on ? ' on' : '') + '" style="--k:' + k + '" viewBox="0 0 48 48" width="52" height="52" aria-hidden="true" focusable="false"><path d="M24 4l6.2 13.2 14.4 1.8-10.6 9.9 2.7 14.3L24 36.2 11.3 43.2 14 28.9 3.4 19l14.4-1.8z" stroke-linejoin="round"/></svg>';
+    const freshDone = done && fx && fx.done;
+    const result = done ? '<section id="qz-result" class="card card-shadow stack qx qx-sum qz-result ext' + (goodAll ? '1' : '0') + (freshDone ? ' fresh' : '') + '" aria-labelledby="qz-result-h">' + qDeco() +
+      '<div class="qs-mas qx-mas m-' + m + '" aria-hidden="true">' + qMascot(m, 120) + '</div>' +
+      '<p class="qs-title">' + (rightN === n ? 'Sempurna!' : (goodAll ? 'Luar biasa!' : (rightN / n >= 0.5 ? 'Bagus sekali!' : 'Terus semangat!'))) + '</p><h2 id="qz-result-h" style="font-size:22px">Skor kuis ' + esc(Q.label) + '</h2>' +
+      '<div class="qs-ring"><svg viewBox="0 0 120 120" width="190" height="190" aria-hidden="true" focusable="false"><circle cx="60" cy="60" r="52" class="qs-trk"/><circle cx="60" cy="60" r="52" class="qs-bar" style="stroke-dasharray:' + C.toFixed(1) + ';--off:' + (C * (1 - rightN / n)).toFixed(1) + '" transform="rotate(-90 60 60)"/></svg>' +
+      '<p class="score">' + rightN + ' dari ' + n + '</p></div>' +
+      '<div class="qs-stars" role="img" aria-label="' + stars + ' dari 3 bintang">' + [1, 2, 3].map((k) => star(k <= stars, k)).join('') + '</div>' +
+      '<p class="qz-score qs-msg" role="status">Skormu: <b>' + rightN + ' dari ' + n + '</b></p>' +
+      '<div class="btn-row"><button type="button" class="btn btn-primary" data-act="qzReset">Ulangi kuis</button></div></section>' : '';
+
+    return header(['kuis']) + '<main id="main" class="page quiz' + (QZ.big ? ' big' : '') + (enter ? ' qz-enter' : '') + '"><section class="qz-hero' + fxHero + '">' + qDeco() +
+      '<div class="qz-hero-txt"><h1 id="main-title" tabindex="-1"><span class="t1">Basic</span> <span class="t2">Grammar</span> <span class="t3">Quiz</span></h1>' +
       '<nav class="qz-tabs" role="tablist" aria-label="Pilih topik kuis">' + tops.map((t) => '<button type="button" role="tab" class="qz-tab" data-act="qzTab" data-t="' + t.id + '" aria-selected="' + (t.id === Q.id ? 'true' : 'false') + '">' + esc(t.label) + '</button>').join('') + '</nav>' +
       '<p class="qz-intro">' + esc(Q.intro) + '</p><div class="qz-tools">' +
       (allOpen ? '<button type="button" class="btn btn-small" data-act="qzReset">Tutup semua jawaban</button>' : '<button type="button" class="btn btn-small btn-primary" data-act="qzAll">Buka semua jawaban</button>') +
       '<button type="button" class="btn btn-small" data-act="toggleSound" aria-pressed="' + (soundOn() ? 'true' : 'false') + '">' + (soundOn() ? ICON.sound(18) + ' Suara hidup' : ICON.mute(18) + ' Suara mati') + '</button>' +
-      '<button type="button" class="btn btn-small" data-act="qzBig" aria-pressed="' + (QZ.big ? 'true' : 'false') + '">' + (QZ.big ? 'Tulisan normal' : 'Tulisan besar') + '</button></div></section>' +
-      '<ol class="qz-list">' + items + '</ol>' +
-      (score !== null ? '<p class="qz-score" role="status">Skormu: <b>' + score + ' dari ' + n + '</b></p>' : '') +
+      '<button type="button" class="btn btn-small" data-act="qzBig" aria-pressed="' + (QZ.big ? 'true' : 'false') + '">' + (QZ.big ? 'Tulisan normal' : 'Tulisan besar') + '</button></div></div>' +
+      '<div class="qz-mascot qx-mas m-' + m + '" aria-hidden="true"><p class="qz-says">' + esc(say) + '</p>' + qMascot(m, 120) + '</div></section>' +
+      bar + '<ol class="qz-list">' + items + '</ol>' + result +
       '<section class="card card-shadow stack qz-cta"><h2>' + esc(Q.cta.title) + '</h2><p>' + esc(Q.cta.text) + '</p><div class="btn-row">' + (Q.cta.buttons || []).map((bt, bi) => '<a class="btn' + (bi === 0 ? ' btn-primary' : '') + '" href="' + bt[1] + '">' + esc(bt[0]) + '</a>').join('') + '</div></section></main>' + FOOT;
   }
 
@@ -1799,6 +2065,7 @@
     { const gl = p[0] === 'pelajaran' ? lessonById(p[1]) : null; document.body.classList.toggle('gram', !!(gl && courseOf(gl) === COURSES.grammar)); }
     applyHeard();
     refreshStudyUI();
+    cbInit();
     if (opts.keepScroll) window.scrollTo(0, y);
     else {
       window.scrollTo(0, 0);
@@ -1826,8 +2093,10 @@
   function evaluate(correct) {
     P.status = correct ? 'right' : 'wrong';
     if (P.results[P.exIdx] === undefined) P.results[P.exIdx] = correct;
+    P.fx = correct ? 'right' : 'wrong';
     sfx(correct);
     render({ keepScroll: true, focusFeedback: true });
+    if (correct) setTimeout(() => burst(document.querySelector('.opt.right') || document.getElementById('feedback'), 26), 60);
   }
   function saveEx() {
     fsSync();
@@ -1901,9 +2170,22 @@
     }
     if (act === 'testVoice') { speakText(SAMPLE, null); return; }
     if (act === 'spell') { speakSpell(el.getAttribute('data-w'), el); return; }
-    if (act === 'qzTab') { QZ.tab = el.getAttribute('data-t'); render({ keepScroll: false }); return; }
-    if (act === 'qzOpen') { quizNow().st.open[Number(el.getAttribute('data-i'))] = true; sfx('reveal'); render({ keepScroll: true }); return; }
-    if (act === 'qzPick') { const qi = Number(el.getAttribute('data-i')); const q = quizNow(); const pv = Number(el.getAttribute('data-o')); q.st.pick[qi] = pv; q.st.open[qi] = true; sfx(pv === q.T.items[qi].answer); if (Object.keys(q.st.pick).length === q.T.items.length) setTimeout(() => sfx('finish'), 650); render({ keepScroll: true }); return; }
+    if (act === 'qzTab') { QZ.tab = el.getAttribute('data-t'); QZ.fresh = true; QZ.last = null; render({ keepScroll: false }); return; }
+    if (act === 'qzOpen') { const oi = Number(el.getAttribute('data-i')); quizNow().st.open[oi] = true; QZ.fx = { i: oi, k: 'reveal' }; sfx('reveal'); render({ keepScroll: true }); return; }
+    if (act === 'qzPick') {
+      const qi = Number(el.getAttribute('data-i')); const q = quizNow(); const pv = Number(el.getAttribute('data-o'));
+      const ok = pv === q.T.items[qi].answer;
+      q.st.pick[qi] = pv; q.st.open[qi] = true;
+      const doneNow = Object.keys(q.st.pick).length === q.T.items.length;
+      QZ.fx = { i: qi, k: ok ? 'right' : 'wrong', done: doneNow }; QZ.last = ok ? 'right' : 'wrong';
+      sfx(ok);
+      if (doneNow) setTimeout(() => sfx('finish'), 650);
+      render({ keepScroll: true });
+      if (ok) setTimeout(() => burst(document.querySelector('.qz-q.fx .qz-opt.right'), 24), 60);
+      if (doneNow) setTimeout(() => burst(null, 46), 700);
+      return;
+    }
+    if (act === 'qzGoScore') { const r = document.getElementById('qz-result'); if (r) r.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     if (act === 'qzSet') {
       const q = quizNow(); const sidx = Number(el.getAttribute('data-s')); const its = q.T.items;
       const allOn = its.every((x, k) => x.set !== sidx || q.st.open[k]);
@@ -1912,8 +2194,10 @@
       render({ keepScroll: true }); return;
     }
     if (act === 'qzAll') { const q = quizNow(); q.T.items.forEach((_, i) => { q.st.open[i] = true; }); sfx('reveal'); render({ keepScroll: true }); return; }
-    if (act === 'qzReset') { const q = quizNow(); q.st.open = {}; q.st.pick = {}; render({ keepScroll: true }); return; }
+    if (act === 'qzReset') { const q = quizNow(); q.st.open = {}; q.st.pick = {}; QZ.last = null; QZ.fx = null; QZ.fresh = true; render({ keepScroll: !el.closest('.qz-result') }); return; }
     if (act === 'qzBig') { QZ.big = !QZ.big; render({ keepScroll: true }); return; }
+    if (act === 'cbGo') { cbSet(Number(el.getAttribute('data-i'))); return; }
+    if (act === 'cbToggle') { CB.hold = !CB.hold; const c = document.getElementById('cb'); if (c) c.classList.toggle('hold', CB.hold); el.setAttribute('aria-pressed', String(CB.hold)); el.textContent = CB.hold ? 'Putar animasi' : 'Jeda animasi'; return; }
     if (act === 'demo') { demoPick = Number(el.getAttribute('data-i')); render({ keepScroll: true }); return; }
     if (act === 'toggleSound') { DB.sound = !soundOn(); save(); if (soundOn()) sfx(true); render({ keepScroll: true }); toast(soundOn() ? 'Efek suara jawaban hidup.' : 'Efek suara jawaban mati.'); return; }
     if (act === 'printReport') { try { window.print(); } catch (e) { toast('Cetak tidak tersedia di tampilan ini. Coba buka halaman ini langsung di browser.'); } return; }
@@ -2006,9 +2290,10 @@
       for (let i = 0; i < cx.exs.length; i++) { if (P.results[i] === undefined) { miss = i; break; } }
       if (miss >= 0) { toast('Soal nomor ' + (miss + 1) + ' belum dijawab. Jawab dulu ya.'); gotoEx(miss); return; }
       saveEx(); P.summary = true; render();
+      if (P.results.filter(Boolean).length / cx.exs.length >= 0.8) setTimeout(() => burst(document.querySelector('.qs-ring'), 40), 350);
       return;
     }
-    if (act === 'redo') { P.enter = true; P.exIdx = 0; P.status = null; P.picked = null; P.value = ''; P.placed = []; P.results = []; P.states = {}; P.fs = {}; P.summary = false; render(); return; }
+    if (act === 'redo') { P.enter = true; P.exIdx = 0; P.status = null; P.picked = null; P.value = ''; P.placed = []; P.results = []; P.states = {}; P.fs = {}; P.summary = false; P.sumSeen = false; render(); return; }
     if (act === 'finishEx') {
       const right = P.results.filter(Boolean).length;
       const p = prog(cx.lesson.id);
