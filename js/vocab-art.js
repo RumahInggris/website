@@ -323,6 +323,52 @@
       A('va-pulse', C(188, 28, 15, GR) + L('M181 28 L186 34 L196 22', WH, 4.5), 1.6, 0) + T(120, 136, 13, '3:00'),
     'first': () => steps(0), 'then': () => steps(1), 'next': () => steps(2), 'after that': () => steps(3), 'finally': () => steps(4)
   });
+
+  /* ---------- gambar sampul pelajaran (tampil di bagian pertama tiap pelajaran) ---------- */
+  const HERO = (id, c1, c2, inner) => '<defs><linearGradient id="lg-' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c1 + '"/><stop offset="1" stop-color="' + c2 + '"/></linearGradient></defs><rect width="240" height="140" fill="url(#lg-' + id + ')"/>' +
+    A('va-bob', '<circle cx="214" cy="24" r="30" fill="#fff" fill-opacity=".3"/>', 5, 0) + A('va-bob', '<circle cx="18" cy="120" r="34" fill="#fff" fill-opacity=".28"/>', 6, 1) + A('va-bob', '<circle cx="40" cy="22" r="9" fill="#fff" fill-opacity=".5"/>', 3.4, .4) + A('va-bob', '<circle cx="226" cy="112" r="7" fill="#fff" fill-opacity=".5"/>', 3, 1.2) + inner;
+  const bubble = (x, y, w, h, f, tailLeft) => P(tailLeft ? 'M' + (x + 18) + ' ' + (y + h - 2) + ' L' + (x + 8) + ' ' + (y + h + 14) + ' L' + (x + 36) + ' ' + (y + h - 2) + ' Z' : 'M' + (x + w - 36) + ' ' + (y + h - 2) + ' L' + (x + w - 8) + ' ' + (y + h + 14) + ' L' + (x + w - 18) + ' ' + (y + h - 2) + ' Z', f) + R(x, y, w, h, 16, f);
+  const hand = () => '<g transform="translate(46 112)">' + A('va-wavehand', [-34, -12, 10, 32].map((a, i) => '<ellipse cx="0" cy="-20" rx="5.5" ry="14" fill="' + SKN + '"' + ST + ' transform="rotate(' + a + ' 0 6)"/>').join('') + E(0, 4, 17, 18, SKN) + '<ellipse cx="-17" cy="0" rx="5.5" ry="12" fill="' + SKN + '"' + ST + ' transform="rotate(-50 -14 6)"/>', 1.3, 0, 'transform-origin:50% 100%;') + '</g>';
+  const bigClock = (cx, cy, r) => C(cx, cy, r, WH) + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => { const a = i * Math.PI / 6, r1 = r - (i % 3 ? 7 : 11); return '<line x1="' + (cx + r1 * Math.sin(a)).toFixed(1) + '" y1="' + (cy - r1 * Math.cos(a)).toFixed(1) + '" x2="' + (cx + (r - 3) * Math.sin(a)).toFixed(1) + '" y2="' + (cy - (r - 3) * Math.cos(a)).toFixed(1) + '" stroke="' + N + '" stroke-width="2.4" stroke-linecap="round"/>'; }).join('');
+  const bell = (x, y, dir) => '<g transform="translate(' + x + ' ' + y + ')">' + A('va-ring', P('M0 -8 Q-13 -8 -13 8 V14 H13 V8 Q13 -8 0 -8 Z', Y) + L('M-16 14 H16', N, 3) + D(0, 20, 3.5, N), 0.35, 0, 'transform-origin:50% 0%;animation-direction:' + dir + ';') + '</g>';
+  const chip = (x, y, txt, f, d) => A('va-bob', R(x - 24, y - 11, 48, 22, 11, f) + T(x, y + 5, 12.5, txt, WH), 2.2, d);
+  const calCell = (c, r, on, delay) => { const x = 64 + c * 17, y = 62 + r * 17; return R(x, y, 13, 13, 3, '#EEF1FA') + (on ? A('va-pop', L('M' + (x + 3) + ' ' + (y + 7) + ' l3 3 l5 -7', GR, 3), 6, delay, 'transform-origin:50% 50%;') : ''); };
+  window.LESSON_ART = {
+    salam: () => HERO('salam', '#FFE9A8', '#FFB3C7',
+      A('va-spin', [0, 1, 2, 3, 4, 5, 6, 7].map((i) => { const a = i * Math.PI / 4; return L('M' + (206 + 20 * Math.cos(a)).toFixed(1) + ' ' + (32 + 20 * Math.sin(a)).toFixed(1) + ' L' + (206 + 28 * Math.cos(a)).toFixed(1) + ' ' + (32 + 28 * Math.sin(a)).toFixed(1), '#FFB347', 4); }).join(''), 14, 0, VB(206, 32) + 'animation-timing-function:linear;') + A('va-pulse', C(206, 32, 14, Y), 2.4, 0) +
+      A('va-hop', bubble(80, 26, 92, 40, WH, true) + T(126, 54, 20, 'Hello!'), 2, 0, 'transform-origin:50% 100%;') +
+      A('va-hop', bubble(98, 76, 126, 34, '#E8F4FF', false) + T(161, 98, 14, 'Good morning!', N), 2, .7, 'transform-origin:50% 100%;') + hand() + spark(70, 20, 6, 0) + spark(30, 66, 5, .8, WH)),
+    perkenalan: () => HERO('perkenalan', '#CFEAFF', '#E7D4FF',
+      A('va-swing', L('M120 6 V30', N, 3) + R(54, 28, 132, 92, 12, WH) + R(54, 28, 132, 30, 12, '#E5322D') + R(54, 44, 132, 14, 0, '#E5322D').replace(' stroke="' + N + '"', ' stroke="#E5322D"') + T(120, 49, 16, 'HELLO', WH) + T(120, 72, 11.5, 'my name is', N) + R(70, 80, 100, 26, 6, '#FFF3B0') + T(120, 99, 15, 'Your name', N) + C(120, 28, 5, GY), 3.2, 0, 'transform-origin:50% 0%;') +
+      A('va-hop', C(26, 100, 15, SKN) + D(21, 97, 2.2, N) + D(31, 97, 2.2, N) + L('M20 105 Q26 111 32 105', N, 2.2), 2, 0, 'transform-origin:50% 100%;') + A('va-hop', C(214, 98, 15, '#FFC9A8') + D(209, 95, 2.2, N) + D(219, 95, 2.2, N) + L('M208 103 Q214 109 220 103', N, 2.2), 2, .8, 'transform-origin:50% 100%;') + spark(30, 40, 6, 0) + spark(210, 50, 7, .6, '#FF8FB1')),
+    alphabet: () => HERO('alphabet', '#E3F8D8', '#FFF3B0',
+      L('M20 76 Q120 -6 220 76', '#FF6B6B', 6) + L('M30 82 Q120 8 210 82', Y, 6) + L('M40 88 Q120 22 200 88', '#7FB5FF', 6) +
+      [['A', O, 22], ['B', Y, 68], ['C', '#7FB5FF', 114], ['D', PK, 160]].map((l, i) => A('va-hop', R(l[2], 66, 46, 46, 10, l[1]) + T(l[2] + 23, 101, 32, l[0], i === 1 ? N : WH), 1.8, i * .25, 'transform-origin:50% 100%;')).join('') +
+      spark(212, 54, 8, 0) + spark(18, 40, 6, .7, WH) + spark(120, 22, 6, 1.1, '#FF8FB1')),
+    jam: () => HERO('jam', '#D9F2FF', '#FFE9C7',
+      bell(66, 32, 'alternate') + bell(174, 32, 'alternate-reverse') + L('M56 40 L74 40 M166 40 L184 40', N, 3) +
+      bigClock(120, 78, 44) + A('va-spin', L('M120 78 V46', N, 4.5), 8, 0, VB(120, 78) + 'animation-timing-function:linear;') + A('va-spin', L('M120 78 V60', N, 6), 60, 0, VB(120, 78) + 'animation-timing-function:linear;') + C(120, 78, 5, N) +
+      spark(30, 96, 7, 0) + spark(212, 100, 7, .6, '#FF8FB1') + spark(210, 56, 5, 1.1, WH)),
+    arah: () => HERO('arah', '#CDEBC8', '#E4F7DC',
+      R(-4, 80, 248, 26, 0, '#6B7089').replace(' stroke="' + N + '"', ' stroke="none"') + R(146, -4, 26, 148, 0, '#6B7089').replace(' stroke="' + N + '"', ' stroke="none"') + '<path d="M0 93 H146 M159 0 V80 M159 106 V140 M172 93 H240" stroke="#fff" stroke-width="2.5" stroke-dasharray="10 8" fill="none"/>' +
+      R(16, 26, 36, 36, 6, '#FFB347') + R(62, 18, 30, 44, 6, '#FF8FB1') + R(190, 112, 34, 16, 6, '#7FB5FF') + R(186, 20, 38, 36, 6, '#B28AF5') +
+      A('va-dash', '<path d="M20 93 H159 V56" fill="none" stroke="' + O + '" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 9"/>', 1.1, 0, 'animation-timing-function:linear;') +
+      '<g transform="translate(159 54)">' + A('va-hop', '<path d="M0 0 C-10 -14 -16 -22 -16 -30 A16 16 0 0 1 16 -30 C16 -22 10 -14 0 0 Z" fill="' + O + '"' + ST + '/><circle cx="0" cy="-30" r="6" fill="#fff"/>', 1.4, 0, 'transform-origin:50% 100%;') + '</g>' +
+      C(36, 104, 15, WH) + A('va-sway', '<polygon points="36,91 31,104 41,104" fill="#E5322D"/><polygon points="36,117 31,104 41,104" fill="' + GY + '"/>', 2.4, 0, 'transform-origin:50% 50%;') + spark(110, 40, 6, .3, WH)),
+    deskripsi: () => HERO('deskripsi', '#F1E3FF', '#FFE0EC',
+      R(88, 16, 64, 106, 12, '#4B3FE0') + R(95, 30, 50, 78, 4, MI) + D(120, 23, 2.5, WH) + R(106, 40, 28, 28, 6, '#FFD9BF') + L('M102 80 H138 M102 90 H130 M102 99 H134', GY, 3) +
+      chip(44, 36, 'big', O, 0) + chip(198, 52, 'new', GR, .5) + chip(46, 100, 'small', '#7FB5FF', 1) + chip(196, 106, 'nice', '#FF6FA0', 1.5) +
+      A('va-flut', '<circle cx="124" cy="64" r="17" fill="#fff" fill-opacity=".45"' + ST + '/><path d="M136 77 L152 94" stroke="' + N + '" stroke-width="6" stroke-linecap="round"/>', 4, 0) + spark(70, 70, 6, 0) + spark(172, 28, 6, .8, '#FF8FB1')),
+    andalan: () => HERO('andalan', '#FFF0C9', '#FFD3C2',
+      A('va-pop', bubble(24, 20, 112, 30, WH, true) + T(80, 41, 14, 'Excuse me,'), 6, 0, 'transform-origin:20% 100%;') +
+      A('va-pop', bubble(76, 54, 140, 30, '#E8F4FF', false) + T(146, 75, 14, 'Could you help?'), 6, 1, 'transform-origin:80% 100%;') +
+      A('va-pop', bubble(40, 90, 120, 26, '#DDF6EF', true) + T(100, 108, 13, 'Thank you!'), 6, 2, 'transform-origin:20% 100%;') +
+      spark(206, 30, 8, 0) + spark(30, 76, 5, .7, '#FF8FB1') + spark(208, 112, 6, 1.2, WH)),
+    simplepresent: () => HERO('simplepresent', '#DFF3FF', '#E8FFE3',
+      A('va-spin', [0, 1, 2, 3, 4, 5, 6, 7].map((i) => { const a = i * Math.PI / 4; return L('M' + (204 + 17 * Math.cos(a)).toFixed(1) + ' ' + (34 + 17 * Math.sin(a)).toFixed(1) + ' L' + (204 + 25 * Math.cos(a)).toFixed(1) + ' ' + (34 + 25 * Math.sin(a)).toFixed(1), '#FFB347', 4); }).join(''), 14, 0, VB(204, 34) + 'animation-timing-function:linear;') + A('va-pulse', C(204, 34, 12, Y), 2.4, 0) +
+      R(46, 24, 136, 96, 12, WH) + R(46, 24, 136, 26, 12, '#E5322D') + R(46, 38, 136, 12, 0, '#E5322D').replace(' stroke="' + N + '"', ' stroke="#E5322D"') + L('M76 18 V32 M152 18 V32', N, 4) + T(114, 44, 13, 'every day', WH) +
+      [0, 1, 2].map((r) => [0, 1, 2, 3, 4, 5, 6].map((c) => calCell(c, r, (r * 7 + c) % 2 === 0, ((r * 7 + c) % 6) * .9)).join('')).join('') + spark(30, 70, 6, 0) + spark(206, 92, 7, .8, '#FF8FB1'))
+  };
   function AC2() { return '#4B3FE0'; }
   window.VOCAB_ART = ART;
 })();

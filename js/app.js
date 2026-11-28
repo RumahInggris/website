@@ -326,7 +326,7 @@
     const spkItems = [['auto', 'Acak']].concat(spk.map((x) => [x.id, x.name + (x.gender === 'm' ? ' (pria)' : x.gender === 'f' ? ' (wanita)' : '')])).concat([['browser', 'Suara komputer']]);
     const spkRow = spk.length ? '<div class="spk-row" role="group" aria-label="Penutur rekaman"><span class="spk-lbl">Penutur:</span>' + spkItems.map((it) => '<button type="button" class="spk-btn" data-act="setSpeaker" data-v="' + esc(it[0]) + '" aria-pressed="' + (spkChoice === it[0] ? 'true' : 'false') + '">' + esc(it[1]) + '</button>').join('') + '</div>' : '';
     const voiceBtn = '<button type="button" class="ic ic-voice" data-act="nextVoice"' + (many ? '' : ' aria-disabled="true"') + ' aria-label="Ganti suara. Sekarang: ' + esc(shortVoice(cur)) + '"><span class="ic-pic">' + ICON.sound(22) + '</span><span class="ic-t">Suara: <strong>' + esc(shortVoice(cur)) + '</strong>' + (many ? ' <span class="ic-n">(' + (Math.max(0, list.indexOf(cur)) + 1) + '/' + list.length + ')</span>' : '') + '</span><span class="ic-chev" aria-hidden="true">⟳</span></button>';
-    return '<div class="audio-settings"><div class="ic-row"><div class="ic-group" role="group" aria-label="Aksen">' + accBtns + '</div><div class="ic-sep" aria-hidden="true"></div><div class="ic-group" role="group" aria-label="Kecepatan">' + spdBtns + '</div></div>' +
+    return '<div class="audio-settings"><div class="ic-blocks"><div class="ic-block"><span class="ic-lab">Aksen</span><div class="ic-group" role="group" aria-label="Aksen">' + accBtns + '</div></div><div class="ic-block"><span class="ic-lab">Kecepatan</span><div class="ic-group" role="group" aria-label="Kecepatan">' + spdBtns + '</div></div></div>' +
       spkRow + '<div class="ic-row ic-voice-row">' + (useBrowser ? voiceBtn : '') +
       '<button type="button" class="ic ic-play" data-act="testVoice" aria-label="Tes suara"><span class="ic-pic"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span><span class="ic-t">Tes</span></button></div>' +
       (useBrowser ? '<details class="ic-tip"' + (audioOpen ? ' open' : '') + '><summary>Suara kurang natural?</summary><p class="muted aset-tip">' + tip + '</p></details>' : '') + '</div>';
@@ -1380,6 +1380,10 @@
       '<div class="btn-row" style="justify-content:center">' + nextBtn + (u ? '<a class="btn" href="' + cc.hash + '">Kembali ke daftar pelajaran</a>' : '<a class="btn" href="#masuk">Buat akun gratis</a>') + '</div></section>' + dlCard(lesson);
   }
 
+  function heroHTML(id) {
+    const f = window.LESSON_ART && window.LESSON_ART[id];
+    return f ? '<div class="lh-hero" aria-hidden="true"><svg viewBox="0 0 240 140" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" focusable="false">' + f() + '</svg></div>' : '';
+  }
   function lessonView(id, keyParam) {
     const lesson = lessonById(id);
     if (!lesson) { location.replace('#dashboard'); return ''; }
@@ -1408,7 +1412,7 @@
         : '<span class="step-arrow off" role="img" aria-label="' + lab + ' belum tersedia">' + ico + '</span>';
     };
     const stepRow = '<div class="step-row">' + arrow('prev', si - 1) + '<p class="step-label">Langkah ' + (si + 1) + ' dari 5: <strong>' + step.label + '</strong></p>' + arrow('next', si + 1) + '</div>';
-    const head = '<div class="lesson-head"><a class="back" href="' + (user() ? courseOf(lesson).hash : '#beranda') + '" aria-label="Kembali ke daftar pelajaran">' + ICON.back(22) + '</a><div><p class="muted" style="font-size:14px">' + unitOf(lesson) + ' ' + lesson.no + '</p><h1 id="main-title" tabindex="-1" style="font-size:22px">' + esc(lesson.title) + '</h1></div><button type="button" class="sfx-btn" data-act="toggleSound" aria-pressed="' + (soundOn() ? 'true' : 'false') + '" aria-label="Efek suara jawaban: ' + (soundOn() ? 'hidup' : 'mati') + '" title="Efek suara jawaban">' + (soundOn() ? ICON.sound(20) : ICON.mute(20)) + '</button></div>' +
+    const head = '<div class="lesson-head"><a class="back" href="' + (user() ? courseOf(lesson).hash : '#beranda') + '" aria-label="Kembali ke daftar pelajaran">' + ICON.back(22) + '</a><div><p class="muted" style="font-size:14px">' + unitOf(lesson) + ' ' + lesson.no + '</p><h1 id="main-title" tabindex="-1" style="font-size:22px">' + esc(lesson.title) + '</h1></div><button type="button" class="sfx-btn" data-act="toggleSound" aria-pressed="' + (soundOn() ? 'true' : 'false') + '" aria-label="Efek suara jawaban: ' + (soundOn() ? 'hidup' : 'mati') + '" title="Efek suara jawaban">' + (soundOn() ? ICON.sound(20) : ICON.mute(20)) + '</button></div>' + heroHTML(lesson.id) +
       seg + stepRow + '<div id="heard-bar" class="heard-bar" hidden></div><div id="audio-bar" class="audio-bar" hidden></div><div id="study-bar" class="study-bar" hidden></div>';
     let main = '';
     if (P.complete) {
