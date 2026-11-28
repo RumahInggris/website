@@ -681,8 +681,12 @@
     'opposite': () => '<path d="M0 56h240v36H0z" fill="' + MV.road + '"/>' + mvB(88, 8, 64, 40, 'r') + mvB(88, 100, 64, 36, 't') + '<path d="M120 60V88" stroke="' + MV.route + '" stroke-width="3" stroke-dasharray="5 5" stroke-linecap="round"/><polygon points="113,61 120,50 127,61" fill="' + MV.route + '"/><polygon points="113,87 120,98 127,87" fill="' + MV.route + '"/>' + mvMover(mvCar(), 'M-30 74H270', [40, 74, 0], 5, 0.85, 'roadm'),
     'until': () => '<path d="M100 0h40v140h-40z" fill="' + MV.road + '"/>' + mvB(84, 4, 72, 34, 't') + '<path d="M120 132V70" stroke="' + MV.route + '" stroke-width="3" stroke-dasharray="6 6" stroke-linecap="round"/>' + mvMover(mvCar(4), 'M120 165V64', [120, 64, -90], 4, 0.5, 'stop-far')
   });
+  function sceneFn(en) {
+    const k = String(en || '').trim().toLowerCase();
+    return MV_SCENES[k] || (window.VOCAB_ART && window.VOCAB_ART[k]) || null;
+  }
   function moveScene(en) {
-    const f = MV_SCENES[String(en || '').trim().toLowerCase()];
+    const f = sceneFn(en);
     return f ? '<span class="fc-anim" aria-hidden="true"><svg viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" focusable="false">' + f() + '</svg></span>' : '';
   }
   function cardsHTML(b, key, st) {
@@ -705,7 +709,7 @@
     const shown = st.flip ? back : front;
     const showsEn = st.rev ? st.flip : !st.flip;
     const isKnown = kn.indexOf(idx) >= 0;
-    const card = '<div class="fc-stage"><button type="button" class="fc-card' + (st.flip ? ' flip' : '') + (isKnown ? ' known' : '') + (MV_SCENES[String(row[0]).trim().toLowerCase()] ? ' has-anim' : '') + '" data-act="fcFlip" data-k="' + k + '" aria-label="Kartu: ' + esc(shown) + '. Tekan untuk membalik.">' +
+    const card = '<div class="fc-stage"><button type="button" class="fc-card' + (st.flip ? ' flip' : '') + (isKnown ? ' known' : '') + (sceneFn(row[0]) ? ' has-anim' : '') + '" data-act="fcFlip" data-k="' + k + '" aria-label="Kartu: ' + esc(shown) + '. Tekan untuk membalik.">' +
       moveScene(row[0]) + '<small class="fc-cap">' + (showsEn ? 'English' : 'Artinya') + '</small><span class="fc-word">' + esc(shown) + '</span><small class="fc-hint">' + (st.flip ? (showsEn ? 'Ucapkan kata ini dengan keras' : 'Cocokkan dengan tebakanmu') : 'Tebak dulu, lalu tekan kartu untuk melihat jawabannya') + '</small></button>' +
       '<span class="fc-say">' + sayX(row[0]) + '</span>' + (isKnown ? '<span class="fc-known">' + ICON.check(14) + ' hafal</span>' : '') + '</div>';
     const nav = '<div class="fc-nav"><button type="button" class="btn" data-act="fcPrev" data-k="' + k + '" aria-label="Kartu sebelumnya">' + ICON.back(18) + '</button><span class="fc-pos">Kartu ' + (st.i + 1) + ' dari ' + d.length + '</span><button type="button" class="btn" data-act="fcNext" data-k="' + k + '" aria-label="Kartu berikutnya">' + ICON.next(18) + '</button></div>';
@@ -728,6 +732,14 @@
       b.cols.map((c) => '<div class="duo-col ' + esc(c.tone || '') + '"><div class="duo-col-head"><i>' + FLAG[c.flag] + '</i><span><b>' + esc(c.label) + '</b><small>' + rich(c.sub) + '</small></span></div><ul>' +
         c.points.map((p) => '<li>' + rich(p) + '</li>').join('') + '</ul></div>').join('') + '</div></section>';
   }
+  /* daftar kosakata bergambar: satu kartu per kata, gambar bergerak, ketuk untuk mendengar */
+  function tilesHTML(b) {
+    return '<p class="muted vt-hint">Ketuk gambar untuk mendengar ucapannya.</p><div class="vt-grid">' + b.rows.map((r) => {
+      const w = plain(r[0]); const f = sceneFn(w);
+      const art = f ? '<button type="button" class="vt-art" data-act="say" data-text="' + esc(w) + '" aria-label="Dengarkan: ' + esc(w) + '"><svg viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">' + f() + '</svg><span class="vt-spk" aria-hidden="true">' + ICON.sound(16) + '</span></button>' : '';
+      return '<div class="vt">' + art + '<div class="vt-info"><span class="vt-en">' + rich(r[0]) + '</span><span class="vt-mean">' + rich(r[1]) + '</span></div></div>';
+    }).join('') + '</div>';
+  }
   function tableSection(b, key) {
     const say = b.say || [];
     const stack = b.head.length >= 3;
@@ -737,6 +749,7 @@
     const sw = b.cards ? '<div class="fc-switch" role="group" aria-label="Cara belajar"><button type="button" data-act="fcMode" data-k="' + k + '" data-v="list" aria-pressed="' + (st.mode === 'list') + '">Daftar</button><button type="button" data-act="fcMode" data-k="' + k + '" data-v="card" aria-pressed="' + (st.mode === 'card') + '">Kartu hafalan</button></div>' : '';
     let inner;
     if (b.cards && st.mode === 'card') inner = cardsHTML(b, key, st);
+    else if (b.pics) inner = tilesHTML(b);
     else {
       inner = '<div class="tbl-wrap' + (stack ? ' stack-wrap' : '') + '"><table class="tbl' + (stack ? ' stack' : '') + '"><thead><tr>' +
         b.head.map((h) => '<th scope="col">' + esc(h) + '</th>').join('') + '</tr></thead><tbody>' +
@@ -780,7 +793,7 @@
     const bar = $('#study-bar');
     document.body.classList.toggle('hide-id', !!DB.hideId);
     if (!bar) return;
-    const has = document.querySelector('#main .phr .id, #main .ent-head .id, #main .dlg-line .id, #main .bub .id, #main .qa small.id, #main td.mean');
+    const has = document.querySelector('#main .phr .id, #main .ent-head .id, #main .dlg-line .id, #main .bub .id, #main .qa small.id, #main td.mean, #main .vt-mean');
     if (!has) { bar.hidden = true; bar.innerHTML = ''; return; }
     const on = !!DB.hideId;
     bar.hidden = false;
@@ -1408,7 +1421,7 @@
       const a = lesson.apply;
       main = '<section class="card card-shadow stack" aria-labelledby="tugas"><h2 id="tugas" style="font-size:20px">Baca dengan suara <span class="beta-tag">Percobaan</span></h2><p>' + esc(a.prompt) + '</p><p class="beta-note">Koreksi suara masih tahap percobaan dan hasilnya hanya perkiraan. Kalau suaramu tidak terbaca, coba lagi atau tandai sendiri bahwa kamu sudah membaca. Pelajaran tetap bisa kamu selesaikan.</p><div id="rd-root">' + rdHTML(lesson) + '</div></section>' + stepNav(si, STEPS[si + 1]);
     }
-    return header(['pelajaran']) + '<main id="main" class="page narrow">' + head + main + '</main>' + FOOT;
+    return header(['pelajaran']) + '<main id="main" class="page lesson"><aside class="lesson-side">' + head + '</aside><div class="lesson-main">' + main + '</div></main>' + FOOT;
   }
   function stepNav(si, nextStep) {
     return '<div class="btn-row">' + (si > 0 ? '<button type="button" class="btn" data-act="prevStep">Kembali</button>' : '') +
@@ -1841,7 +1854,7 @@
       if (fl && fl.closest('#main')) { fl.classList.toggle('rev'); return; }
     }
     if (document.body.classList.contains('hide-id') && !e.target.closest('button, a, summary, input, select, textarea, label')) {
-      const it = e.target.closest('.phr li, .ent-ex li, .ent-head, .dlg-line, .bub, .qa, tbody tr');
+      const it = e.target.closest('.phr li, .ent-ex li, .ent-head, .dlg-line, .bub, .qa, .vt, tbody tr');
       if (it && it.closest('#main') && !it.closest('.mq, .fc-stage')) { it.classList.toggle('rev'); return; }
     }
     const el = e.target.closest('[data-act]');
